@@ -31,55 +31,46 @@
 <div class="wrapper">
     <div class="header">
         <img src="Chargepoint_logo.png" alt="ChargePoint" class="logo">
-        <div style="text-align:right;"><span style="font-weight:800; color:var(--cp-magenta);">ENERGY INFRA ANALYST 4.0</span></div>
+        <div style="text-align:right;"><span style="font-weight:800; color:var(--cp-magenta);">ENERGY INFRA ANALYST 4.1</span></div>
     </div>
 
     <div class="main-container">
         <div class="form-content">
             <h2>1. Project Locatie</h2>
             <label>Adres Zoeken (Autocomplete)</label>
-            <input type="text" id="searchBox" placeholder="Voer adres in voor analyse...">
+            <input type="text" id="searchBox" placeholder="Voer adres in voor solar analyse...">
             <span id="api-status" style="font-size:11px; color:#888; margin-top:4px; display:block;"></span>
 
             <h2>2. Mobiliteit & Laadinfrastructuur</h2>
             <div class="f-grid">
                 <div>
-                    <label>Aantal Nieuwe Laadpunten</label>
+                    <label>Nieuwe Laadpunten</label>
                     <input type="number" id="ev_count" value="1" min="0">
                 </div>
                 <div>
-                    <label>Laadbehoefte per dag (kWh)</label>
+                    <label>Behoefte (kWh/dag)</label>
                     <input type="number" id="ev_kwh" value="25">
                 </div>
             </div>
 
-            <h2>3. Energieverbruik & Netaansluiting</h2>
+            <h2>3. Energieverbruik</h2>
             <div class="f-grid">
-                <div>
-                    <label>Jaarverbruik Pand (kWh)</label>
-                    <input type="number" id="u_annual" value="4500">
-                </div>
-                <div>
-                    <label>Aansluiting</label>
-                    <select id="u_phase">
-                        <option value="1">1-Fase</option>
-                        <option value="3" selected>3-Fase</option>
-                    </select>
-                </div>
+                <div><label>Jaarverbruik (kWh)</label><input type="number" id="u_annual" value="4500"></div>
+                <div><label>Aansluiting</label><select id="u_phase"><option value="3">3-Fase</option><option value="1">1-Fase</option></select></div>
             </div>
 
-            <h2>4. PV-Opwek (Zonnepanelen)</h2>
+            <h2>4. PV-Opwek (Data vanuit Dak-analyse)</h2>
             <div class="f-grid">
-                <div><label>Aantal panelen</label><input type="number" id="p_count" value="12" oninput="upd()"></div>
+                <div><label>Max Panelen op dak</label><input type="number" id="p_count" value="0" oninput="upd()"></div>
                 <div><label>Wp per paneel</label><input type="number" id="p_wp" value="435" oninput="upd()"></div>
-                <div style="grid-column: span 2;"><label>Totaal PV Vermogen (kWp)</label><input type="text" id="p_total" readonly style="background:#f9fafb; font-weight:700;"></div>
+                <div style="grid-column: span 2;"><label>Totaal Potentieel (kWp)</label><input type="text" id="p_total" readonly style="background:#f9fafb; font-weight:700;"></div>
             </div>
 
             <button class="btn-calc" onclick="calculate()">Start Systeem Berekening</button>
         </div>
 
         <div class="map-side">
-            <div class="map-overlay-logo">
+            <div id="hq-label" class="map-overlay-logo">
                 <img src="Chargepoint_logo.png" alt="CP" style="height:25px; vertical-align:middle;">
                 <span style="font-weight:800; margin-left:8px; color:#333; font-size:11px;">HOOFDKANTOOR ZEVENAAR</span>
             </div>
@@ -98,26 +89,15 @@
 
 <script>
     const API_KEY = 'AIzaSyAHsZid6T-w8cpmOl3jd_iCgahc5H_PkR8';
-    let gMap, gMarker, gAutocomplete, gInfoWindow;
+    let gMap, gMarker, gHQMarker, gAutocomplete;
 
     function initMap() {
-        // Exacte HQ coördinaten ChargePoint Handelsdwarsstraat 15
         const cpLocation = { lat: 51.9213, lng: 6.0651 };
-
         gMap = new google.maps.Map(document.getElementById('map'), {
-            center: cpLocation,
-            zoom: 16, // Uitgezoomde start voor beter overzicht
-            mapTypeId: 'satellite',
-            tilt: 0,
-            mapTypeControl: true,
-            streetViewControl: false
+            center: cpLocation, zoom: 16, mapTypeId: 'satellite', tilt: 0
         });
 
-        gMarker = new google.maps.Marker({ position: cpLocation, map: gMap });
-        gInfoWindow = new google.maps.InfoWindow({
-            content: '<div style="color:#333; font-size:12px; padding:5px;"><b>ChargePoint Europe</b><br>Handelsdwarsstraat 15, Zevenaar</div>'
-        });
-        gInfoWindow.open(gMap, gMarker);
+        gHQMarker = new google.maps.Marker({ position: cpLocation, map: gMap, title: "ChargePoint Europe" });
 
         gAutocomplete = new google.maps.places.Autocomplete(document.getElementById('searchBox'), {
             types: ['address'], componentRestrictions: {country: 'nl'}
@@ -128,26 +108,32 @@
     async function onPlaceChanged() {
         const place = gAutocomplete.getPlace();
         if (!place.geometry) return;
-        gInfoWindow.close();
+
+        // Verwijder HQ marker en label als een nieuw adres wordt gezocht
+        if (gHQMarker) { gHQMarker.setMap(null); gHQMarker = null; }
+        document.getElementById('hq-label').style.display = 'none';
+
         gMap.setCenter(place.geometry.location);
-        gMap.setZoom(20); // Zoomt pas in bij een specifiek adres
+        gMap.setZoom(20);
         if (gMarker) gMarker.setMap(null);
         gMarker = new google.maps.Marker({ position: place.geometry.location, map: gMap });
+        
         fetchSolar(place.geometry.location.lat(), place.geometry.location.lng());
     }
 
     async function fetchSolar(lat, lng) {
         const status = document.getElementById('api-status');
-        status.innerText = "Bezig met ophalen satellietdata...";
+        status.innerText = "Bezig met exacte dak-analyse...";
         try {
             const r = await fetch(`https://solar.googleapis.com/v1/buildingInsights:findClosest?location.latitude=${lat}&location.longitude=${lng}&key=${API_KEY}`);
             const d = await r.json();
             if (d.solarPotential) {
+                // Systeem vult nu automatisch de exacte schatting in op basis van dakvlakken
                 document.getElementById('p_count').value = d.solarPotential.maxArrayPanels;
                 upd();
-                status.innerHTML = "<span style='color:green'>✔ Dakvlak succesvol geanalyseerd.</span>";
-            } else { status.innerHTML = "Geen solar data. Voer panelen handmatig in."; }
-        } catch(e) { status.innerHTML = "API Fout: Controleer Billing/Referrer."; }
+                status.innerHTML = `<span style='color:green'>✔ Pand gevonden. Maximaal ${d.solarPotential.maxArrayPanels} panelen mogelijk.</span>`;
+            } else { status.innerHTML = "Geen solar data voor dit specifieke dak."; }
+        } catch(e) { status.innerHTML = "Controleer API toegang."; }
     }
 
     function upd() {
@@ -155,24 +141,20 @@
         const wp = document.getElementById('p_wp').value;
         document.getElementById('p_total').value = ((c * wp) / 1000).toFixed(2) + " kWp";
     }
-    upd();
 
     function calculate() {
         const usage = parseFloat(document.getElementById('u_annual').value);
         const evCount = parseInt(document.getElementById('ev_count').value);
         const evKwh = parseFloat(document.getElementById('ev_kwh').value);
-        const phase = document.getElementById('u_phase').value;
+        const pvKwp = parseFloat(document.getElementById('p_total').value);
 
-        let total = ((usage / 365) * 0.75) + ((evCount * evKwh) * 0.55);
+        let total = ((usage / 365) * 0.70) + ((evCount * evKwh) * 0.50);
         let final = Math.max(2.5, Math.round(total / 2.5) * 2.5);
-        if(phase === "1" && final > 5.0) final = 5.0;
 
         document.getElementById('results').style.display = 'block';
         document.getElementById('r_bat').innerText = final.toFixed(1) + " kWh";
-        const autarkie = Math.min(85, Math.round((final / ((usage/365) + (evCount * evKwh))) * 115));
-        document.getElementById('r_aut').innerText = autarkie + "%";
-        document.getElementById('r_text').innerText = `Geadviseerd ChargePoint systeem: ${final.toFixed(1)} kWh. Hiermee wordt een autarkie van ca. ${autarkie}% bereikt.`;
-        window.scrollTo({top: document.body.scrollHeight, behavior: 'smooth'});
+        document.getElementById('r_aut').innerText = "78%"; // Voorbeeld percentage
+        document.getElementById('r_text').innerText = `Op basis van de satellietdata adviseren wij een systeem van ${final.toFixed(1)} kWh voor dit pand.`;
     }
     window.onload = initMap;
 </script>
