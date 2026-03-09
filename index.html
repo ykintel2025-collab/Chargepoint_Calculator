@@ -29,7 +29,7 @@
 <div class="wrapper">
     <div class="header">
         <img src="Chargepoint_logo.png" alt="ChargePoint" class="logo">
-        <div style="text-align:right;"><span style="font-weight:800; color:var(--cp-magenta);">INFRASTRUCTURE ANALYST 3.3</span></div>
+        <div style="text-align:right;"><span style="font-weight:800; color:var(--cp-magenta);">INFRASTRUCTURE ANALYST 3.4</span></div>
     </div>
 
     <div class="main-container">
@@ -39,19 +39,19 @@
             <input type="text" id="searchBox" placeholder="Voer adres in voor live scan...">
             <p id="api-status" style="font-size:11px; margin-top:5px; font-weight:600;"></p>
 
-            <h2>2. Laadpaal Configuratie</h2>
+            <h2>2. Laadpaal & Infrastructuur</h2>
             <div class="f-grid">
                 <div>
-                    <label>Aantal Nieuwe Laders</label>
+                    <label>Aantal Laders</label>
                     <input type="number" id="ev_count" value="1" min="0">
                 </div>
                 <div>
-                    <label>Laadbehoefte per dag (kWh)</label>
+                    <label>Laadbehoefte per auto (kWh)</label>
                     <input type="number" id="ev_kwh" value="25">
                 </div>
             </div>
 
-            <h2>3. Energie & PV-Installatie</h2>
+            <h2>3. Energie & PV-Systeem</h2>
             <div class="f-grid">
                 <div>
                     <label>Aantal Panelen</label>
@@ -62,12 +62,12 @@
                     <input type="number" id="u_annual" value="4500">
                 </div>
                 <div style="grid-column: span 2;">
-                    <label>Totaal PV Vermogen (kWp)</label>
+                    <label>Gecalculeerd PV Vermogen</label>
                     <input type="text" id="p_total" readonly style="background:#f9fafb; font-weight:700;">
                 </div>
             </div>
 
-            <button class="btn-calc" onclick="calculate()">Bereken Integraal Systeem</button>
+            <button class="btn-calc" onclick="calculate()">Bereken Integraal Advies</button>
         </div>
 
         <div class="map-side">
@@ -92,6 +92,7 @@
         gMap = new google.maps.Map(document.getElementById('map'), {
             center: {lat: 52.1326, lng: 5.2913}, zoom: 7, mapTypeId: 'satellite', tilt: 45, disableDefaultUI: true
         });
+        // Gebruikt de Places API voor autocomplete
         gAutocomplete = new google.maps.places.Autocomplete(document.getElementById('searchBox'), {
             types: ['address'], componentRestrictions: {country: 'nl'}
         });
@@ -104,6 +105,7 @@
         gMap.setCenter(place.geometry.location); gMap.setZoom(20);
         if (gMarker) gMarker.setMap(null);
         gMarker = new google.maps.Marker({position: place.geometry.location, map: gMap});
+        // Gebruikt de Solar API via de verkregen coördinaten
         fetchSolar(place.geometry.location.lat(), place.geometry.location.lng());
     }
 
@@ -118,7 +120,7 @@
                 upd();
                 status.innerHTML = "<span style='color:green'>✔ Satellietdata geladen.</span>";
             } else { status.innerHTML = "<span style='color:orange'>Geen solar data voor dit pand.</span>"; }
-        } catch(e) { status.innerHTML = "<span style='color:red'>Check Billing & Referrer instellingen.</span>"; }
+        } catch(e) { status.innerHTML = "<span style='color:red'>API Fout: Check Billing & Referrer instellingen.</span>"; }
     }
 
     function upd() {
@@ -134,12 +136,14 @@
         const evKwh = parseFloat(document.getElementById('ev_kwh').value);
 
         let batBase = (usage / 365) * 0.75;
-        let batEV = (evCount * evKwh) * 0.50;
+        let batEV = (evCount * evKwh) * 0.55; // Specifieke buffer voor laadpaalgebruik
+        
         let final = Math.max(2.5, Math.round((batBase + batEV) / 2.5) * 2.5);
 
         document.getElementById('results').style.display = 'block';
         document.getElementById('r_bat').innerText = final.toFixed(1) + " kWh";
         document.getElementById('r_aut').innerText = Math.min(85, Math.round((final / ((usage/365) + (evCount * evKwh))) * 110)) + "%";
+        document.getElementById('r_text').innerText = `Op basis van de dakanalyse en de geplande infrastructuur voor ${evCount} auto(s), adviseren wij een ChargePoint systeem van ${final.toFixed(1)} kWh.`;
         window.scrollTo({top: document.body.scrollHeight, behavior: 'smooth'});
     }
     window.onload = initMap;
