@@ -3,211 +3,274 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ChargePoint | Batterij Opslag Calculator</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <title>ChargePoint Europe | Professionele Batterij Calculator</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
+        /* ChargePoint Kleurenpalet (geëxtraheerd uit logo/website) */
         :root {
-            --cp-orange: #ff7a14;
-            --cp-blue: #0076a8;
-            --cp-dark: #2c3e50;
-            --cp-gray: #555555;
-            --cp-light-bg: #f4f7f9;
+            --cp-magenta: #e6007e;    /* De vurige roze uit het logo */
+            --cp-dark: #333333;       /* De donkergrijze tekst en stekker */
+            --cp-light: #ffffff;      /* Achtergrond */
+            --cp-gray-bg: #f8f8f8;    /* Lichtgrijze sectie-achtergrond */
+            --cp-border: #e0e0e0;     /* Randen */
+            --cp-text-sec: #666666;   /* Subtekst */
         }
 
         body { 
             font-family: 'Inter', sans-serif; 
-            background-color: var(--cp-light-bg); 
-            display: flex; 
-            justify-content: center; 
-            align-items: center;
-            min-height: 100vh;
+            background-color: var(--cp-light); 
             color: var(--cp-dark);
-            margin: 0;
-            padding: 20px;
+            margin: 0; padding: 40px 20px;
+            display: flex; justify-content: center;
         }
 
-        .card { 
-            background: white; 
-            padding: 40px; 
-            border-radius: 12px; 
-            box-shadow: 0 15px 35px rgba(0,0,0,0.1); 
-            max-width: 450px; 
-            width: 100%; 
-            border-top: 8px solid var(--cp-orange);
+        .calc-wrapper {
+            max-width: 800px;
+            width: 100%;
+            border: 1px solid var(--cp-border);
+            border-radius: 4px;
+            box-shadow: 0 12px 30px rgba(0,0,0,0.06);
+            overflow: hidden;
         }
 
-        .logo {
-            font-weight: 800;
-            font-size: 26px;
-            color: var(--cp-dark);
-            margin-bottom: 30px;
-            letter-spacing: -1px;
-            text-align: center;
+        .cp-header {
+            padding: 30px 40px;
+            border-bottom: 1px solid var(--cp-border);
+            text-align: left;
         }
-        .logo span { color: var(--cp-orange); }
 
-        h2 { 
-            font-size: 20px;
-            margin-bottom: 25px; 
-            text-align: center;
+        /* Het door jou meegestuurde logo */
+        .cp-logo { max-height: 40px; width: auto; }
+
+        .cp-content { padding: 40px; background-color: var(--cp-light); }
+
+        h1 { font-size: 24px; font-weight: 700; margin-bottom: 30px; color: var(--cp-dark); }
+
+        .section-label {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: var(--cp-magenta);
             font-weight: 700;
-            color: var(--cp-blue);
+            margin-bottom: 20px;
+            display: block;
         }
 
-        .form-group { margin-bottom: 20px; }
-
-        label { 
-            display: block; 
-            margin-bottom: 8px; 
-            font-weight: 600; 
-            color: var(--cp-gray);
-            font-size: 14px;
+        .input-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 25px;
+            margin-bottom: 30px;
         }
 
-        input[type="number"] { 
-            width: 100%; 
-            padding: 12px 15px; 
-            border: 1px solid #d1d8e0; 
-            border-radius: 6px; 
-            box-sizing: border-box; 
+        .field-label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: var(--cp-dark);
+        }
+
+        input[type="number"], select {
+            width: 100%;
+            padding: 14px;
+            border: 1px solid var(--cp-border);
             font-size: 16px;
-            transition: border-color 0.2s;
+            box-sizing: border-box;
+            background-color: var(--cp-gray-bg);
+            border-radius: 2px;
         }
 
-        input:focus {
+        input:focus, select:focus {
             outline: none;
-            border-color: var(--cp-blue);
-            border-width: 2px;
+            border-color: var(--cp-magenta);
         }
 
-        .checkbox-container {
-            background: #f9f9f9;
-            border: 1px solid #edf2f7;
-            padding: 15px;
-            border-radius: 8px;
-            margin-top: 5px;
+        .cp-opties {
+            padding: 25px;
+            background-color: var(--cp-gray-bg);
+            border: 1px solid var(--cp-border);
+            margin-bottom: 30px;
+            border-radius: 2px;
         }
 
-        .checkbox-group { 
-            display: flex; 
-            align-items: center; 
-            gap: 12px; 
-            margin-bottom: 12px;
+        .check-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
             cursor: pointer;
             font-size: 14px;
             font-weight: 500;
         }
 
-        .checkbox-group input {
-            width: 18px;
-            height: 18px;
-            accent-color: var(--cp-orange);
+        .check-item:last-child { margin-bottom: 0; }
+
+        .check-item input {
+            width: 20px; height: 20px;
+            margin-right: 15px;
+            accent-color: var(--cp-magenta);
         }
 
-        button { 
-            width: 100%; 
-            background-color: var(--cp-orange); 
-            color: white; 
-            border: none; 
-            padding: 16px; 
-            border-radius: 6px; 
-            font-size: 15px; 
+        .actions {
+            display: flex;
+            gap: 15px;
+            margin-top: 30px;
+        }
+
+        .btn-calc {
+            background-color: var(--cp-magenta);
+            color: white;
+            border: none;
+            padding: 18px 35px;
+            font-size: 14px;
             font-weight: 700;
-            cursor: pointer; 
-            margin-top: 25px; 
             text-transform: uppercase;
+            cursor: pointer;
             letter-spacing: 1px;
-            transition: background 0.3s, transform 0.1s;
+            transition: background-color 0.2s;
+            flex-grow: 1;
         }
 
-        button:hover { background-color: #e66b00; }
+        .btn-calc:hover { background-color: #c7006e; }
 
-        #result { 
-            margin-top: 30px; 
-            padding: 25px; 
-            border-radius: 10px; 
-            display: none; 
-            text-align: center;
-            background-color: #fff4ec; 
-            border: 1px solid var(--cp-orange);
-            animation: slideUp 0.4s ease-out;
-        }
-
-        @keyframes slideUp {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .result-value {
-            font-size: 38px;
-            color: var(--cp-orange);
-            font-weight: 800;
-            margin: 10px 0;
-        }
-
-        .result-desc {
+        .btn-print {
+            background-color: #f0f0f0;
+            color: var(--cp-dark);
+            border: 1px solid #dcdcdc;
+            padding: 18px;
             font-size: 13px;
-            color: var(--cp-gray);
-            line-height: 1.5;
+            text-transform: uppercase;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        #advies-box {
+            display: none;
+            margin-top: 40px;
+            padding: 40px;
+            background-color: var(--cp-magenta);
+            color: white;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        .res-title { font-size: 11px; text-transform: uppercase; letter-spacing: 2.5px; margin-bottom: 10px; font-weight: 700; }
+        .res-value { font-size: 52px; font-weight: 800; margin-bottom: 25px; }
+        .res-text { font-size: 15px; line-height: 1.6; opacity: 0.9; }
+
+        @media print {
+            body { padding: 0; background: white; }
+            .calc-wrapper { border: none; box-shadow: none; max-width: 100%; }
+            .actions, .btn-print, .btn-calc { display: none; }
+            #advies-box { display: block !important; background: white !important; color: black !important; border: 2px solid #e6007e; page-break-inside: avoid; }
+            input, select { -webkit-appearance: none; border: none; background: none; color: black; font-weight: 600; padding: 0; }
         }
     </style>
 </head>
 <body>
 
-<div class="card">
-    <div class="logo">Charge<span>Point</span></div>
-    <h2>Batterij Calculator</h2>
-    
-    <div class="form-group">
-        <label for="verbruik">Jaarverbruik (kWh)</label>
-        <input type="number" id="verbruik" value="4000">
+<div class="calc-wrapper">
+    <div class="cp-header">
+        <img src="https://raw.githubusercontent.com/ykintel2025-collab/Chargepoint_Calculator/main/Chargepoint_Logo.png" alt="ChargePoint" class="cp-logo">
     </div>
 
-    <div class="form-group">
-        <label for="pv">Zonnepanelen (kWp)</label>
-        <input type="number" id="pv" value="5">
-    </div>
+    <div class="cp-content">
+        <h1>Energie Opslag Advies</h1>
 
-    <div class="form-group">
-        <label>Extra opties</label>
-        <div class="checkbox-container">
-            <label class="checkbox-group">
-                <input type="checkbox" id="wp"> <span>Warmtepomp</span>
+        <span class="section-label">Gegevens</span>
+        <div class="input-row">
+            <div>
+                <label class="field-label">Aantal bewoners</label>
+                <select id="aantal_mensen">
+                    <option value="1">1 Persoon</option>
+                    <option value="2" selected>2 Personen</option>
+                    <option value="4">3-4 Personen</option>
+                    <option value="6">5+ Personen</option>
+                </select>
+            </div>
+            <div>
+                <label class="field-label">Jaarverbruik (kWh)</label>
+                <input type="number" id="jaar_v" value="3800">
+            </div>
+        </div>
+
+        <span class="section-label">Installatie</span>
+        <div class="input-row">
+            <div>
+                <label class="field-label">Zonnepanelen aanwezig?</label>
+                <select id="has_pv" onchange="togglePVInput()">
+                    <option value="yes">Ja, aanwezig</option>
+                    <option value="no">Nee, niet aanwezig</option>
+                </select>
+            </div>
+            <div id="pv_vermogen_div">
+                <label class="field-label">Systeemvermogen (kWp)</label>
+                <input type="number" id="pv_kw" value="4.8" step="0.1">
+            </div>
+        </div>
+
+        <label class="field-label">Extra Verbruikers</label>
+        <div class="cp-opties">
+            <label class="check-item">
+                <input type="checkbox" id="ev_laad"> Elektrische Auto (thuis laden)
             </label>
-            <label class="checkbox-group">
-                <input type="checkbox" id="ev"> <span>Elektrische auto</span>
+            <label class="check-item">
+                <input type="checkbox" id="wp_heat"> Warmtepomp Installatie
             </label>
         </div>
-    </div>
 
-    <button onclick="bereken()">Bereken Advies</button>
+        <div class="actions">
+            <button class="btn-calc" onclick="calculate()">Bereken Configuratie</button>
+            <button class="btn-print" onclick="window.print()">Print</button>
+        </div>
 
-    <div id="result">
-        <div style="font-weight:600; font-size:12px; text-transform:uppercase;">Geadviseerde Opslag</div>
-        <div id="out" class="result-value">-- kWh</div>
-        <p id="desc" class="result-desc"></p>
+        <div id="advies-box">
+            <div class="res-title">Geadviseerde Opslag</div>
+            <div class="res-value" id="out_cap">-- kWh</div>
+            <div class="res-text" id="out_text"></div>
+        </div>
     </div>
 </div>
 
 <script>
-    function bereken() {
-        const v = parseFloat(document.getElementById('verbruik').value);
-        const p = parseFloat(document.getElementById('pv').value);
-        const wp = document.getElementById('wp').checked;
-        const ev = document.getElementById('ev').checked;
+    function togglePVInput() {
+        const hasPV = document.getElementById('has_pv').value === 'yes';
+        document.getElementById('pv_vermogen_div').style.opacity = hasPV ? '1' : '0.15';
+    }
 
-        if (!v || !p) return;
+    function calculate() {
+        const v = parseFloat(document.getElementById('jaar_v').value);
+        const p = parseFloat(document.getElementById('pv_kw').value);
+        const hasPV = document.getElementById('has_pv').value === 'yes';
+        const ev = document.getElementById('ev_laad').checked;
+        const wp = document.getElementById('wp_heat').checked;
 
-        let n = 0.65;
-        if (wp) n += 0.15;
-        if (ev) n += 0.10;
+        // Logica voor nachtverbruik en buffer
+        let f = 0.65; // Basis nachtdekking
+        if (ev) f += 0.12;
+        if (wp) f += 0.18;
 
-        let advies = Math.min((v / 365) * n, p * 1.6);
-        advies = Math.round(advies * 2) / 2;
+        let benodigd = (v / 365) * f;
 
-        document.getElementById('result').style.display = 'block';
-        document.getElementById('out').innerText = advies.toFixed(1) + " kWh";
-        document.getElementById('desc').innerText = "Berekening op basis van " + (n * 100).toFixed(0) + "% nachtdekking.";
+        // Corrigeren op basis van PV (beperkte buffer als je niets opwekt)
+        let advies;
+        if (hasPV) {
+            advies = Math.min(benodigd, p * 1.6);
+        } else {
+            advies = Math.min(benodigd, 7.5); // Lager limiet zonder PV
+        }
+
+        // Afronden op 2.5 kWh modules
+        advies = Math.max(2.5, Math.round(advies / 2.5) * 2.5);
+
+        // UI Updates
+        document.getElementById('advies-box').style.display = 'block';
+        document.getElementById('out_cap').innerText = advies.toFixed(1) + " kWh";
+        
+        document.getElementById('out_text').innerText = `Op basis van een verbruik van ${v} kWh adviseren wij een modulair systeem van ${advies.toFixed(1)} kWh. Dit dekt uw gemiddelde DAL-verbruik en optimaliseert uw eigenverbruik van zonne-energie.`;
+        
+        window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
     }
 </script>
 
