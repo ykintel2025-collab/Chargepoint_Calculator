@@ -22,7 +22,6 @@
         label { display: block; font-size: 10px; font-weight: 800; text-transform: uppercase; margin-bottom: 6px; color: #666; }
         input, select { width: 100%; padding: 12px; border: 1px solid var(--cp-border); border-radius: 6px; font-size: 14px; box-sizing: border-box; }
         .btn-calc { background: var(--cp-magenta); color: white; border: none; padding: 20px; width: 100%; font-size: 16px; font-weight: 800; text-transform: uppercase; cursor: pointer; margin-top: 30px; border-radius: 8px; transition: 0.3s ease; }
-        .btn-calc:hover { filter: brightness(1.1); transform: translateY(-2px); box-shadow: 0 5px 15px rgba(230,0,126,0.3); }
         #results { display: none; padding: 40px; background: var(--cp-dark); color: white; border-top: 6px solid var(--cp-magenta); }
         .val { font-size: 42px; font-weight: 800; color: var(--cp-magenta); }
     </style>
@@ -32,14 +31,14 @@
 <div class="wrapper">
     <div class="header">
         <img src="Chargepoint_logo.png" alt="ChargePoint" class="logo">
-        <div style="text-align:right;"><span style="font-weight:800; color:var(--cp-magenta);">ENERGY INFRA ANALYST 3.9</span></div>
+        <div style="text-align:right;"><span style="font-weight:800; color:var(--cp-magenta);">ENERGY INFRA ANALYST 4.0</span></div>
     </div>
 
     <div class="main-container">
         <div class="form-content">
             <h2>1. Project Locatie</h2>
             <label>Adres Zoeken (Autocomplete)</label>
-            <input type="text" id="searchBox" placeholder="Voer adres in voor messcherpe analyse...">
+            <input type="text" id="searchBox" placeholder="Voer adres in voor analyse...">
             <span id="api-status" style="font-size:11px; color:#888; margin-top:4px; display:block;"></span>
 
             <h2>2. Mobiliteit & Laadinfrastructuur</h2>
@@ -107,9 +106,9 @@
 
         gMap = new google.maps.Map(document.getElementById('map'), {
             center: cpLocation,
-            zoom: 20, // Maximaal ingezoomd voor scherpte
+            zoom: 16, // Uitgezoomde start voor beter overzicht
             mapTypeId: 'satellite',
-            tilt: 0, // Recht van boven voor scherpste beeld
+            tilt: 0,
             mapTypeControl: true,
             streetViewControl: false
         });
@@ -131,7 +130,7 @@
         if (!place.geometry) return;
         gInfoWindow.close();
         gMap.setCenter(place.geometry.location);
-        gMap.setZoom(20);
+        gMap.setZoom(20); // Zoomt pas in bij een specifiek adres
         if (gMarker) gMarker.setMap(null);
         gMarker = new google.maps.Marker({ position: place.geometry.location, map: gMap });
         fetchSolar(place.geometry.location.lat(), place.geometry.location.lng());
@@ -139,7 +138,7 @@
 
     async function fetchSolar(lat, lng) {
         const status = document.getElementById('api-status');
-        status.innerText = "Bezig met ophalen high-res satellietdata...";
+        status.innerText = "Bezig met ophalen satellietdata...";
         try {
             const r = await fetch(`https://solar.googleapis.com/v1/buildingInsights:findClosest?location.latitude=${lat}&location.longitude=${lng}&key=${API_KEY}`);
             const d = await r.json();
@@ -172,11 +171,10 @@
         document.getElementById('r_bat').innerText = final.toFixed(1) + " kWh";
         const autarkie = Math.min(85, Math.round((final / ((usage/365) + (evCount * evKwh))) * 115));
         document.getElementById('r_aut').innerText = autarkie + "%";
-        document.getElementById('r_text').innerText = `Geadviseerd ChargePoint systeem: ${final.toFixed(1)} kWh. Hiermee wordt een autarkie van ca. ${autarkie}% bereikt voor het pand en de laadinfrastructuur.`;
+        document.getElementById('r_text').innerText = `Geadviseerd ChargePoint systeem: ${final.toFixed(1)} kWh. Hiermee wordt een autarkie van ca. ${autarkie}% bereikt.`;
         window.scrollTo({top: document.body.scrollHeight, behavior: 'smooth'});
     }
     window.onload = initMap;
 </script>
-
 </body>
 </html>
