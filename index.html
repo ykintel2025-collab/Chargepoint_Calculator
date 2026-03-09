@@ -3,23 +3,26 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ChargePoint Sales Pro | Energy Expert</title>
+    <title>ChargePoint Sales Pro | Energy Infra Analyst</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
     <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAHsZid6T-w8cpmOl3jd_iCgahc5H_PkR8&libraries=places"></script>
     <style>
         :root { --cp-magenta: #e6007e; --cp-dark: #1a1a1a; --cp-border: #d1d5db; }
         body { font-family: 'Inter', sans-serif; background: #f3f4f6; margin: 0; padding: 15px; color: var(--cp-dark); }
-        .wrapper { max-width: 1200px; margin: 0 auto; background: #fff; border-radius: 12px; box-shadow: 0 20px 50px rgba(0,0,0,0.15); display: flex; flex-direction: column; overflow: hidden; }
+        .wrapper { max-width: 1250px; margin: 0 auto; background: #fff; border-radius: 12px; box-shadow: 0 20px 50px rgba(0,0,0,0.15); display: flex; flex-direction: column; overflow: hidden; }
         .header { padding: 20px 40px; border-bottom: 4px solid var(--cp-magenta); display: flex; justify-content: space-between; align-items: center; background: #fff; }
         .logo { max-height: 45px; }
-        .main-container { display: grid; grid-template-columns: 1fr 500px; min-height: 750px; }
+        .main-container { display: grid; grid-template-columns: 1fr 550px; min-height: 750px; }
         .form-content { padding: 30px 40px; border-right: 1px solid #eee; overflow-y: auto; height: 750px; }
-        #map { height: 100%; width: 100%; background: #ddd; }
+        .map-side { position: relative; background: #ddd; display: flex; flex-direction: column; }
+        #map { flex-grow: 1; width: 100%; }
+        .map-overlay-logo { position: absolute; top: 15px; left: 15px; z-index: 10; background: rgba(255,255,255,0.9); padding: 10px; border-radius: 4px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); border-left: 3px solid var(--cp-magenta); }
         h2 { font-size: 11px; text-transform: uppercase; color: var(--cp-magenta); margin: 25px 0 15px 0; border-bottom: 1px solid #eee; padding-bottom: 8px; font-weight: 800; letter-spacing: 1px; }
         .f-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
         label { display: block; font-size: 10px; font-weight: 800; text-transform: uppercase; margin-bottom: 6px; color: #666; }
         input, select { width: 100%; padding: 12px; border: 1px solid var(--cp-border); border-radius: 6px; font-size: 14px; box-sizing: border-box; }
-        .btn-calc { background: var(--cp-magenta); color: white; border: none; padding: 20px; width: 100%; font-size: 16px; font-weight: 800; text-transform: uppercase; cursor: pointer; margin-top: 30px; border-radius: 8px; }
+        .btn-calc { background: var(--cp-magenta); color: white; border: none; padding: 20px; width: 100%; font-size: 16px; font-weight: 800; text-transform: uppercase; cursor: pointer; margin-top: 30px; border-radius: 8px; transition: 0.2s; }
+        .btn-calc:hover { filter: brightness(1.1); transform: translateY(-2px); }
         #results { display: none; padding: 40px; background: var(--cp-dark); color: white; border-top: 6px solid var(--cp-magenta); }
         .val { font-size: 42px; font-weight: 800; color: var(--cp-magenta); }
         .info-tag { font-size: 11px; color: #888; margin-top: 4px; display: block; }
@@ -30,30 +33,29 @@
 <div class="wrapper">
     <div class="header">
         <img src="Chargepoint_logo.png" alt="ChargePoint" class="logo">
-        <div style="text-align:right;"><span style="font-weight:800; color:var(--cp-magenta);">ENERGY INFRA ANALYST 3.5</span></div>
+        <div style="text-align:right;"><span style="font-weight:800; color:var(--cp-magenta);">ENERGY INFRA ANALYST 3.7</span></div>
     </div>
 
     <div class="main-container">
         <div class="form-content">
             <h2>1. Project Locatie</h2>
-            <label>Zoek Adres (Geeft inzicht in dakpotentieel)</label>
-            <input type="text" id="searchBox" placeholder="Voer adres in voor live scan...">
+            <label>Adres Zoeken (Autocomplete)</label>
+            <input type="text" id="searchBox" placeholder="Voer adres in voor analyse...">
             <span id="api-status" class="info-tag"></span>
 
-            <h2>2. Mobiliteit & Laadbehoefte</h2>
+            <h2>2. Mobiliteit & Laadinfrastructuur</h2>
             <div class="f-grid">
                 <div>
                     <label>Aantal Nieuwe Laadpunten</label>
                     <input type="number" id="ev_count" value="1" min="0">
                 </div>
                 <div>
-                    <label>Gem. kilometers per auto/dag</label>
-                    <input type="number" id="ev_km" value="60">
-                    <span class="info-tag">Verbruik: ~0.2 kWh/km</span>
+                    <label>Laadbehoefte per dag (kWh)</label>
+                    <input type="number" id="ev_kwh" value="25">
                 </div>
             </div>
 
-            <h2>3. Energieverbruik Pand</h2>
+            <h2>3. Energieverbruik & Netaansluiting</h2>
             <div class="f-grid">
                 <div>
                     <label>Huidig Jaarverbruik (kWh)</label>
@@ -62,16 +64,16 @@
                 <div>
                     <label>Type Netaansluiting</label>
                     <select id="u_phase">
-                        <option value="1">1-Fase (Systeem beperkt)</option>
-                        <option value="3" selected>3-Fase (Geadviseerd)</option>
+                        <option value="1">1-Fase</option>
+                        <option value="3" selected>3-Fase</option>
                     </select>
                 </div>
             </div>
 
-            <h2>4. Bestaande/Geplande PV-opwek</h2>
+            <h2>4. PV-Opwek (Zonnepanelen)</h2>
             <div class="f-grid">
                 <div>
-                    <label>Totaal aantal panelen</label>
+                    <label>Aantal panelen</label>
                     <input type="number" id="p_count" value="12" oninput="upd()">
                 </div>
                 <div>
@@ -84,33 +86,57 @@
                 </div>
             </div>
 
-            <button class="btn-calc" onclick="calculate()">Genereer Systeem Advies</button>
+            <button class="btn-calc" onclick="calculate()">Bereken Systeem Advies</button>
         </div>
 
         <div class="map-side">
+            <div class="map-overlay-logo">
+                <img src="Chargepoint_logo.png" alt="CP" style="height:25px; vertical-align:middle;">
+                <span style="font-size:10px; font-weight:800; margin-left:5px; color:#555;">HQ ZEVENAAR</span>
+            </div>
             <div id="map"></div>
         </div>
     </div>
 
     <div id="results">
         <div class="f-grid">
-            <div><label style="color:#aaa;">Geadviseerde Batterij</label><div class="val" id="r_bat">-- kWh</div></div>
-            <div><label style="color:#aaa;">Schatting Autarkie</label><div class="val" id="r_aut">-- %</div></div>
+            <div><label style="color:#aaa;">Opslagcapaciteit</label><div class="val" id="r_bat">-- kWh</div></div>
+            <div><label style="color:#aaa;">Dekkingsgraad</label><div class="val" id="r_aut">-- %</div></div>
         </div>
         <p id="r_text" style="margin-top:25px; color:#ddd; line-height:1.6; font-size:15px; border-top:1px solid #444; padding-top:20px;"></p>
     </div>
 </div>
 
 <script>
-    const API_KEY = 'AIzaSyAHsZid6T-w8cpmOl3jd_iCgahc5H_PkR8'; // Je werkende sleutel
-    let gMap, gMarker, gAutocomplete;
+    const API_KEY = 'AIzaSyAHsZid6T-w8cpmOl3jd_iCgahc5H_PkR8';
+    let gMap, gMarker, gAutocomplete, gInfoWindow;
 
     function initMap() {
+        // Startpositie: Handelsdwarsstraat 15, Zevenaar
+        const cpAddress = { lat: 51.9388, lng: 6.0754 };
+
         gMap = new google.maps.Map(document.getElementById('map'), {
-            center: {lat: 52.1326, lng: 5.2913}, zoom: 7, mapTypeId: 'satellite', tilt: 45, disableDefaultUI: true
+            center: cpAddress,
+            zoom: 18,
+            mapTypeId: 'satellite',
+            tilt: 45,
+            disableDefaultUI: true
         });
+
+        gMarker = new google.maps.Marker({
+            position: cpAddress,
+            map: gMap,
+            title: "ChargePoint Europe B.V."
+        });
+
+        gInfoWindow = new google.maps.InfoWindow({
+            content: '<div style="color:#333; font-family:Inter; font-size:12px; padding:5px;"><b>ChargePoint Europe B.V.</b><br>Handelsdwarsstraat 15</div>'
+        });
+        gInfoWindow.open(gMap, gMarker);
+
         gAutocomplete = new google.maps.places.Autocomplete(document.getElementById('searchBox'), {
-            types: ['address'], componentRestrictions: {country: 'nl'}
+            types: ['address'],
+            componentRestrictions: {country: 'nl'}
         });
         gAutocomplete.addListener('place_changed', onPlaceChanged);
     }
@@ -118,24 +144,29 @@
     async function onPlaceChanged() {
         const place = gAutocomplete.getPlace();
         if (!place.geometry) return;
-        gMap.setCenter(place.geometry.location); gMap.setZoom(20);
+        
+        gInfoWindow.close();
+        gMap.setCenter(place.geometry.location);
+        gMap.setZoom(20);
+        
         if (gMarker) gMarker.setMap(null);
-        gMarker = new google.maps.Marker({position: place.geometry.location, map: gMap});
+        gMarker = new google.maps.Marker({ position: place.geometry.location, map: gMap });
+
         fetchSolar(place.geometry.location.lat(), place.geometry.location.lng());
     }
 
     async function fetchSolar(lat, lng) {
         const status = document.getElementById('api-status');
-        status.innerText = "Google Solar scant dakoppervlak...";
+        status.innerText = "Bezig met ophalen satellietdata...";
         try {
             const r = await fetch(`https://solar.googleapis.com/v1/buildingInsights:findClosest?location.latitude=${lat}&location.longitude=${lng}&key=${API_KEY}`);
             const d = await r.json();
             if (d.solarPotential) {
                 document.getElementById('p_count').value = d.solarPotential.maxArrayPanels;
                 upd();
-                status.innerHTML = "<span style='color:green'>✔ Satellietscan succesvol.</span>";
-            } else { status.innerHTML = "Geen solar data. Voer handmatig in."; }
-        } catch(e) { status.innerHTML = "Scan niet beschikbaar (Check Billing)."; }
+                status.innerHTML = "<span style='color:green'>✔ Satellietdata succesvol geladen.</span>";
+            } else { status.innerHTML = "<span style='color:orange'>Geen solar data voor dit pand.</span>"; }
+        } catch(e) { status.innerHTML = "<span style='color:red'>Check Billing & Referrer instellingen.</span>"; }
     }
 
     function upd() {
@@ -149,31 +180,20 @@
         const usage = parseFloat(document.getElementById('u_annual').value);
         const kwp = parseFloat(document.getElementById('p_total').value);
         const evCount = parseInt(document.getElementById('ev_count').value);
-        const evKm = parseFloat(document.getElementById('ev_km').value);
+        const evKwh = parseFloat(document.getElementById('ev_kwh').value);
         const phase = document.getElementById('u_phase').value;
 
-        // BEREKENING:
-        // 1. Basis nachtlast pand (ca 65%)
-        let batBase = (usage / 365) * 0.65;
-        // 2. EV Behoefte: km * 0.2 kWh/km * aantal auto's (buffer voor nacht)
-        let batEV = (evCount * (evKm * 0.2)) * 0.8; 
-        
-        let totaal = batBase + batEV;
-        // Afronden op ChargePoint 2.5kWh modules
-        let final = Math.max(2.5, Math.round(totaal / 2.5) * 2.5);
-
-        // Veiligheidscheck voor 1-fase
+        let batBase = (usage / 365) * 0.75;
+        let batEV = (evCount * evKwh) * 0.50; 
+        let total = batBase + batEV;
+        let final = Math.max(2.5, Math.round(total / 2.5) * 2.5);
         if(phase === "1" && final > 5.0) final = 5.0;
 
         document.getElementById('results').style.display = 'block';
         document.getElementById('r_bat').innerText = final.toFixed(1) + " kWh";
-        
-        // Autarkie indicatie: hoe groter de batterij t.o.v. verbruik, hoe hoger %
-        const autarkie = Math.min(85, Math.round((final / ((usage/365) + (evCount * evKm * 0.2))) * 110));
+        const autarkie = Math.min(85, Math.round((final / ((usage/365) + (evCount * evKwh))) * 110));
         document.getElementById('r_aut').innerText = autarkie + "%";
-        
-        document.getElementById('r_text').innerText = `Op basis van de dakanalyse en de gewenste laadinfrastructuur voor ${evCount} auto's, adviseren wij een ChargePoint systeem van ${final.toFixed(1)} kWh. Hiermee optimaliseert u uw eigenverbruik naar ca. ${autarkie}% en voorkomt u onnodige belasting van het elektriciteitsnet.`;
-        
+        document.getElementById('r_text').innerText = `Geadviseerd ChargePoint systeem: ${final.toFixed(1)} kWh. Dit systeem optimaliseert uw eigenverbruik en mobiliteitsbehoefte.`;
         window.scrollTo({top: document.body.scrollHeight, behavior: 'smooth'});
     }
     window.onload = initMap;
