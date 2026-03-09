@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ChargePoint Sales Pro | Google Solar Edition</title>
+    <title>ChargePoint Sales Pro | Analyst</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
     <style>
         :root { --cp-magenta: #e6007e; --cp-dark: #333333; --cp-border: #e0e0e0; }
         body { font-family: 'Inter', sans-serif; background: #f4f7f9; margin: 0; padding: 20px; color: var(--cp-dark); }
         .wrapper { max-width: 850px; margin: 0 auto; background: #fff; box-shadow: 0 10px 30px rgba(0,0,0,0.1); border-radius: 8px; overflow: hidden; }
         .header { padding: 25px 40px; border-bottom: 2px solid var(--cp-magenta); display: flex; justify-content: space-between; align-items: center; background: #fff; }
-        .logo { max-height: 50px; }
+        .logo { max-height: 50px; width: auto; }
         .content { padding: 40px; }
         h2 { font-size: 14px; text-transform: uppercase; letter-spacing: 1px; color: var(--cp-magenta); margin: 30px 0 20px 0; border-bottom: 1px solid #eee; padding-bottom: 10px; font-weight: 700; }
         .input-group { margin-bottom: 25px; }
@@ -30,7 +30,7 @@
 <div class="wrapper">
     <div class="header">
         <img src="Chargepoint_logo.png" alt="ChargePoint" class="logo">
-        <div style="font-weight:800; color:var(--cp-magenta); font-size: 12px; letter-spacing: 1px;">SALES PRO ANALYST</div>
+        <div style="font-weight:800; color:var(--cp-magenta); font-size: 12px;">SALES PRO ANALYST</div>
     </div>
 
     <div class="content">
@@ -39,7 +39,7 @@
             <div class="address-row">
                 <div style="flex-grow: 1;">
                     <label>Adres voor Satellietscan</label>
-                    <input type="text" id="adres" placeholder="Straat, Nr, Woonplaats">
+                    <input type="text" id="adres" placeholder="Straat, Nr, Woonplaats" value="Lingestraat 21 Veghel">
                 </div>
                 <button class="btn-api" onclick="scanDak()">Scan Dak via Google</button>
             </div>
@@ -64,7 +64,7 @@
             </div>
         </div>
 
-        <button class="btn-main" onclick="berekenSysteem()">Genereer Systeem Advies</button>
+        <button class="btn-main" onclick="bereken()">Genereer Systeem Advies</button>
 
         <div id="result-box">
             <div style="text-transform:uppercase; font-size:11px; letter-spacing: 2px; color:var(--cp-magenta); font-weight:700;">Geadviseerde Configuratie</div>
@@ -78,61 +78,58 @@
                     <div class="highlight" id="out_pv">-- kWp</div>
                 </div>
             </div>
-            <p id="advies_tekst" style="margin-top:25px; font-size:14px; line-height:1.6; color:#ccc;"></p>
         </div>
     </div>
 </div>
 
 <script>
-    // Jouw API sleutel uit het screenshot
-    const GOOGLE_KEY = 'AIzaSyCurnfzpLle-DsRG1Hg4zfaHG07-xPSL4Q'; 
+    const KEY = 'AIzaSyAHsZid6T-w8cpmOl3jd_iCgahc5H_PkR8'; 
     let maxKWp = 0;
 
     async function scanDak() {
         const adres = document.getElementById('adres').value;
-        if(!adres) return alert("Voer eerst een adres in.");
-        
+        const infoDiv = document.getElementById('dak_info');
         document.getElementById('solar-results').style.display = 'block';
-        document.getElementById('dak_info').innerText = "Google satellietdata analyseren...";
+        infoDiv.innerText = "Bezig met scannen...";
 
         try {
-            // Stap 1: Geocoding (Adres -> Coördinaten)
-            const gRes = await fetch(`https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(adres)}&key=${GOOGLE_KEY}`);
+            const gRes = await fetch(`https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(adres)}&key=${KEY}`);
             const gData = await gRes.json();
+            
+            if (gData.status !== "OK") throw new Error("Adres niet gevonden.");
+            
             const loc = gData.results[0].geometry.location;
-
-            // Stap 2: Solar API
-            const sRes = await fetch(`https://solar.googleapis.com/v1/buildingInsights:findClosest?location.latitude=${loc.lat}&location.longitude=${loc.lng}&key=${GOOGLE_KEY}`);
+            const sRes = await fetch(`https://solar.googleapis.com/v1/buildingInsights:findClosest?location.latitude=${loc.lat}&location.longitude=${loc.lng}&key=${KEY}`);
             const sData = await sRes.json();
 
-            const panelen = sData.solarPotential.maxArrayPanels;
-            maxKWp = panelen * 0.435;
-
-            document.getElementById('dak_info').innerHTML = `
-                <b>Satelliet Analyse voltooid:</b><br>
-                Maximaal aantal panelen: <b>${panelen}</b><br>
-                Potentieel PV-vermogen: <b>${maxKWp.toFixed(1)} kWp</b>
-            `;
+            if (!sData.solarPotential) {
+                // FALLBACK: Als Google geen solar data heeft voor dit specifieke pand
+                maxKWp = 6.5; // Gemiddelde schatting voor een woning
+                infoDiv.innerHTML = `<span style="color:#ff9800;">Geen exacte satellietdata beschikbaar. We rekenen met een standaard potentieel van <b>6.5 kWp</b>.</span>`;
+            } else {
+                const panelen = sData.solarPotential.maxArrayPanels;
+                maxKWp = panelen * 0.43;
+                infoDiv.innerHTML = `Analyse voltooid: <b>${panelen} panelen</b> mogelijk (ca. <b>${maxKWp.toFixed(1)} kWp</b>).`;
+            }
         } catch (e) {
-            document.getElementById('dak_info').innerText = "Fout: Kon geen satellietdata voor dit adres ophalen.";
+            infoDiv.innerHTML = `<span style="color:red;">Fout: ${e.message}</span>`;
         }
     }
 
-    function berekenSysteem() {
+    function bereken() {
         const usage = parseFloat(document.getElementById('usage').value);
         const ev = document.getElementById('ev').checked;
         const wp = document.getElementById('wp').checked;
-
-        let factor = 0.65 + (ev ? 0.15 : 0) + (wp ? 0.20 : 0);
-        let cap = (usage / 365) * factor;
-
-        if(maxKWp > 0) cap = Math.min(cap, maxKWp * 1.5);
+        let cap = (usage / 365) * (0.65 + (ev ? 0.15 : 0) + (wp ? 0.20 : 0));
+        
+        // Gebruik de berekende maxKWp of een default van 5 als er niet gescand is
+        let limitPV = maxKWp > 0 ? maxKWp : 5;
+        cap = Math.min(cap, limitPV * 1.5);
+        
         cap = Math.max(2.5, Math.round(cap / 2.5) * 2.5);
-
         document.getElementById('result-box').style.display = 'block';
         document.getElementById('out_bat').innerText = cap.toFixed(1) + " kWh";
-        document.getElementById('out_pv').innerText = maxKWp > 0 ? maxKWp.toFixed(1) + " kWp" : "Onbekend";
-        document.getElementById('advies_tekst').innerText = `Op basis van de dakanalyse adviseren wij een systeem van ${cap.toFixed(1)} kWh.`;
+        document.getElementById('out_pv').innerText = maxKWp > 0 ? maxKWp.toFixed(1) + " kWp" : "N.v.t.";
     }
 </script>
 
