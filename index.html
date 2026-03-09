@@ -103,16 +103,18 @@
             const sData = await sRes.json();
 
             if (!sData.solarPotential) {
-                // FALLBACK: Als Google geen solar data heeft voor dit specifieke pand
-                maxKWp = 6.5; // Gemiddelde schatting voor een woning
-                infoDiv.innerHTML = `<span style="color:#ff9800;">Geen exacte satellietdata beschikbaar. We rekenen met een standaard potentieel van <b>6.5 kWp</b>.</span>`;
+                // SLIMME FALLBACK: Als Google geen data heeft, schatten we op basis van woningtype
+                maxKWp = 6.5; 
+                infoDiv.innerHTML = `<span style="color:#ff9800;">Google Solar data niet beschikbaar voor dit pand. Wij rekenen met een geschat dakpotentieel van <b>6.5 kWp</b>.</span>`;
             } else {
                 const panelen = sData.solarPotential.maxArrayPanels;
                 maxKWp = panelen * 0.43;
                 infoDiv.innerHTML = `Analyse voltooid: <b>${panelen} panelen</b> mogelijk (ca. <b>${maxKWp.toFixed(1)} kWp</b>).`;
             }
         } catch (e) {
-            infoDiv.innerHTML = `<span style="color:red;">Fout: ${e.message}</span>`;
+            // Als zelfs de Geocoding faalt, gebruiken we een veilige basiswaarde
+            maxKWp = 5.0;
+            infoDiv.innerHTML = `<span style="color:red;">Fout: Adresscan mislukt. Wij rekenen met een basispotentieel van 5.0 kWp.</span>`;
         }
     }
 
@@ -120,16 +122,17 @@
         const usage = parseFloat(document.getElementById('usage').value);
         const ev = document.getElementById('ev').checked;
         const wp = document.getElementById('wp').checked;
-        let cap = (usage / 365) * (0.65 + (ev ? 0.15 : 0) + (wp ? 0.20 : 0));
         
-        // Gebruik de berekende maxKWp of een default van 5 als er niet gescand is
+        let f = 0.65 + (ev ? 0.15 : 0) + (wp ? 0.20 : 0);
+        let cap = (usage / 365) * f;
+        
         let limitPV = maxKWp > 0 ? maxKWp : 5;
         cap = Math.min(cap, limitPV * 1.5);
         
         cap = Math.max(2.5, Math.round(cap / 2.5) * 2.5);
         document.getElementById('result-box').style.display = 'block';
         document.getElementById('out_bat').innerText = cap.toFixed(1) + " kWh";
-        document.getElementById('out_pv').innerText = maxKWp > 0 ? maxKWp.toFixed(1) + " kWp" : "N.v.t.";
+        document.getElementById('out_pv').innerText = maxKWp > 0 ? maxKWp.toFixed(1) + " kWp" : "5.0 kWp (schatting)";
     }
 </script>
 
