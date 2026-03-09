@@ -3,26 +3,30 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ChargePoint Sales Pro | Systeem Configuratie</title>
+    <title>ChargePoint Sales Pro | Enterprise Analyst</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAHsZid6T-w8cpmOl3jd_iCgahc5H_PkR8&libraries=places"></script>
     <style>
-        :root { --cp-magenta: #e6007e; --cp-dark: #333; --cp-border: #e0e0e0; --cp-bg: #f4f7f9; }
-        body { font-family: 'Inter', sans-serif; background: var(--cp-bg); margin: 0; padding: 20px; color: var(--cp-dark); }
-        .wrapper { max-width: 900px; margin: 0 auto; background: #fff; box-shadow: 0 15px 35px rgba(0,0,0,0.1); border-radius: 8px; overflow: hidden; }
-        .header { padding: 25px 40px; border-bottom: 2px solid var(--cp-magenta); display: flex; justify-content: space-between; align-items: center; }
-        .logo { max-height: 50px; }
-        .content { padding: 40px; }
-        h2 { font-size: 15px; text-transform: uppercase; letter-spacing: 1px; color: var(--cp-magenta); margin: 30px 0 15px 0; border-bottom: 1px solid #eee; padding-bottom: 8px; font-weight: 700; }
-        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-        label { display: block; font-size: 11px; font-weight: 700; text-transform: uppercase; margin-bottom: 8px; color: #666; }
-        input, select { width: 100%; padding: 12px; border: 1px solid var(--cp-border); border-radius: 4px; font-size: 15px; box-sizing: border-box; transition: 0.2s; }
+        :root { --cp-magenta: #e6007e; --cp-dark: #1a1a1a; --cp-border: #d1d5db; }
+        body { font-family: 'Inter', sans-serif; background: #f3f4f6; margin: 0; padding: 20px; color: var(--cp-dark); }
+        .wrapper { max-width: 1150px; margin: 0 auto; background: #fff; border-radius: 12px; box-shadow: 0 20px 50px rgba(0,0,0,0.15); display: flex; flex-direction: column; overflow: hidden; }
+        .header { padding: 20px 40px; border-bottom: 4px solid var(--cp-magenta); display: flex; justify-content: space-between; align-items: center; background: #fff; }
+        .logo { max-height: 45px; }
+        .main-container { display: grid; grid-template-columns: 1fr 500px; min-height: 650px; }
+        .form-content { padding: 30px 40px; border-right: 1px solid #eee; overflow-y: auto; }
+        .map-container { background: #ddd; position: relative; }
+        #map { height: 100%; width: 100%; }
+        h2 { font-size: 12px; text-transform: uppercase; color: var(--cp-magenta); margin: 25px 0 15px 0; border-bottom: 1px solid #eee; padding-bottom: 8px; font-weight: 800; letter-spacing: 1px; }
+        .field-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        label { display: block; font-size: 10px; font-weight: 800; text-transform: uppercase; margin-bottom: 6px; color: #666; }
+        input, select { width: 100%; padding: 12px; border: 1px solid var(--cp-border); border-radius: 6px; font-size: 14px; box-sizing: border-box; transition: 0.2s; }
         input:focus { border-color: var(--cp-magenta); outline: none; box-shadow: 0 0 0 3px rgba(230,0,126,0.1); }
-        .btn-scan { background: #0076a8; color: white; border: none; padding: 12px 20px; border-radius: 4px; cursor: pointer; font-weight: 600; font-size: 13px; }
-        .btn-main { background: var(--cp-magenta); color: white; border: none; padding: 20px; width: 100%; font-size: 16px; font-weight: 700; text-transform: uppercase; cursor: pointer; margin-top: 30px; }
-        .info-msg { font-size: 12px; color: #888; margin-top: 5px; }
-        #result-box { display: none; margin-top: 30px; padding: 35px; background: var(--cp-dark); color: white; border-radius: 6px; }
-        .highlight { color: var(--cp-magenta); font-size: 42px; font-weight: 800; }
-        .warning { background: #fff3cd; border: 1px solid #ffeeba; color: #856404; padding: 15px; border-radius: 4px; margin-top: 15px; font-size: 13px; display: none; }
+        .btn-calc { background: var(--cp-magenta); color: white; border: none; padding: 20px; width: 100%; font-size: 16px; font-weight: 800; text-transform: uppercase; cursor: pointer; margin-top: 30px; border-radius: 8px; transition: 0.3s; }
+        .btn-calc:hover { filter: brightness(1.1); transform: translateY(-2px); }
+        #results { display: none; padding: 40px; background: var(--cp-dark); color: white; border-top: 6px solid var(--cp-magenta); }
+        .res-val { font-size: 42px; font-weight: 800; color: var(--cp-magenta); }
+        #api-status { font-size: 11px; margin-top: 5px; font-weight: 600; }
+        .pac-container { border-radius: 8px; border: none; box-shadow: 0 10px 20px rgba(0,0,0,0.1); font-family: 'Inter'; }
     </style>
 </head>
 <body>
@@ -30,161 +34,164 @@
 <div class="wrapper">
     <div class="header">
         <img src="Chargepoint_logo.png" alt="ChargePoint" class="logo">
-        <div style="font-weight:800; color:var(--cp-magenta); font-size: 12px;">SYSTEM INVENTORY TOOL</div>
+        <div style="text-align:right; line-height:1.2;">
+            <span style="font-weight:800; color:var(--cp-magenta); font-size:14px;">SALES PRO ANALYST 2.0</span><br>
+            <small id="curDate" style="color:#888;"></small>
+        </div>
     </div>
 
-    <div class="content">
-        <h2>1. Locatie & Satelliet (Optioneel)</h2>
-        <div style="display:flex; gap:10px; align-items:flex-end; margin-bottom: 10px;">
-            <div style="flex-grow:1;">
-                <label>Adres voor scan</label>
-                <input type="text" id="adres" placeholder="Straat, Nr, Woonplaats">
-            </div>
-            <button class="btn-scan" onclick="scanDak()">Scan via Google</button>
-        </div>
-        <div id="scan_msg" class="info-msg">De scan vult het aantal panelen automatisch in indien beschikbaar.</div>
+    <div class="main-container">
+        <div class="form-content">
+            <h2>1. Locatie & Satelliet Analyse</h2>
+            <label>Zoek Adres (Autocomplete)</label>
+            <input type="text" id="searchBox" placeholder="Begin te typen voor adressen in NL...">
+            <p id="api-status"></p>
 
-        <h2>2. PV-Installatie Details</h2>
-        <div class="grid">
-            <div>
-                <label>Aantal Panelen</label>
-                <input type="number" id="num_panels" value="12" oninput="recalcPV()">
+            <h2>2. PV-Installatie & Dakvlak</h2>
+            <div class="field-grid">
+                <div><label>Aantal Panelen</label><input type="number" id="p_count" value="12" oninput="upd()"></div>
+                <div><label>Wp per paneel</label><input type="number" id="p_wp" value="435" oninput="upd()"></div>
+                <div style="grid-column: span 2;"><label>Totaal Vermogen (kWp)</label><input type="text" id="p_total" readonly style="background:#f9fafb; font-weight:700;"></div>
             </div>
-            <div>
-                <label>Wattpiek per paneel (Wp)</label>
-                <input type="number" id="wp_per_panel" value="435" oninput="recalcPV()">
-            </div>
-            <div>
-                <label>Totaal Vermogen (kWp)</label>
-                <input type="number" id="total_kwp" step="0.1" readonly style="background:#f9f9f9;">
-            </div>
-            <div>
-                <label>Type Aansluiting</label>
-                <select id="grid_phase">
-                    <option value="1">1-Fase (max 5.0 kWh advies)</option>
-                    <option value="3" selected>3-Fase (krachtstroom)</option>
-                </select>
-            </div>
-        </div>
 
-        <h2>3. Energieverbruik & Profiel</h2>
-        <div class="grid">
-            <div>
-                <label>Jaarverbruik (kWh)</label>
-                <input type="number" id="usage" value="4000">
-            </div>
-            <div>
-                <label>Verbruiksprofiel</label>
-                <select id="profile">
-                    <option value="0.65">Overdag afwezig (Avondverbruiker)</option>
-                    <option value="0.50">Veel thuis (Overdagverbruiker)</option>
-                    <option value="0.80">Nachtverbruiker (Servers/Koeling)</option>
-                </select>
-            </div>
-        </div>
-
-        <h2>4. Toekomstbestendigheid</h2>
-        <div class="grid">
-            <div style="display:flex; align-items:center; gap:10px;">
-                <input type="checkbox" id="ev" style="width:20px; height:20px;">
-                <label style="margin:0;">Elektrische Auto (Laden @ home)</label>
-            </div>
-            <div style="display:flex; align-items:center; gap:10px;">
-                <input type="checkbox" id="wp" style="width:20px; height:20px;">
-                <label style="margin:0;">Warmtepomp aanwezig</label>
-            </div>
-        </div>
-
-        <button class="btn-main" onclick="generateAdvice()">Genereer Systeem Advies</button>
-
-        <div id="phase_warn" class="warning">
-            <strong>Let op:</strong> Het advies overschrijdt de optimale capaciteit voor een 1-fase aansluiting. Overweeg een verzwaring naar 3-fase voor een rendabel systeem.
-        </div>
-
-        <div id="result-box">
-            <div style="text-transform:uppercase; font-size:11px; letter-spacing:2px; color:var(--cp-magenta); font-weight:700;">Geadviseerde Configuratie</div>
-            <div class="grid" style="margin-top:20px;">
+            <h2>3. Elektra & Verbruiksprofiel</h2>
+            <div class="field-grid">
+                <div><label>Jaarverbruik (kWh)</label><input type="number" id="u_annual" value="4500"></div>
                 <div>
-                    <label style="color:#aaa;">Opslagcapaciteit</label>
-                    <div class="highlight" id="out_bat">-- kWh</div>
+                    <label>Hoofdaansluiting</label>
+                    <select id="u_phase">
+                        <option value="1">1-Fase (max 5.0 kWh)</option>
+                        <option value="3" selected>3-Fase (Krachtstroom)</option>
+                    </select>
                 </div>
                 <div>
-                    <label style="color:#aaa;">Dekkingsgraad</label>
-                    <div class="highlight" id="out_cover">-- %</div>
+                    <label>Warmtepomp?</label>
+                    <select id="u_wp">
+                        <option value="0">Nee</option>
+                        <option value="2.5">Ja (+2.5 kWh buffer)</option>
+                    </select>
+                </div>
+                <div>
+                    <label>Back-up Functie?</label>
+                    <select id="u_backup">
+                        <option value="no">Geen back-up</option>
+                        <option value="yes">Full Back-up gewenst</option>
+                    </select>
                 </div>
             </div>
-            <p id="out_advies" style="margin-top:25px; font-size:14px; line-height:1.6; color:#ccc; border-top:1px solid #444; padding-top:20px;"></p>
+
+            <button class="btn-calc" onclick="run()">Bereken ChargePoint Systeem</button>
         </div>
+
+        <div class="map-container">
+            <div id="map"></div>
+        </div>
+    </div>
+
+    <div id="results">
+        <div class="field-grid">
+            <div><label style="color:#aaa;">Geadviseerde Batterij</label><div class="res-val" id="r_bat">-- kWh</div></div>
+            <div><label style="color:#aaa;">Autarkie Graad</label><div class="res-val" id="r_aut">-- %</div></div>
+        </div>
+        <p id="r_text" style="margin-top:20px; color:#ddd; line-height:1.6; font-size:15px; border-top: 1px solid #444; padding-top: 20px;"></p>
     </div>
 </div>
 
 <script>
-    const KEY = 'AIzaSyAHsZid6T-w8cpmOl3jd_iCgahc5H_PkR8'; // Je actieve key
+    const API_KEY = 'AIzaSyAHsZid6T-w8cpmOl3jd_iCgahc5H_PkR8';
+    let gMap, gMarker, gAutocomplete;
 
-    function recalcPV() {
-        const n = document.getElementById('num_panels').value;
-        const wp = document.getElementById('wp_per_panel').value;
-        document.getElementById('total_kwp').value = ((n * wp) / 1000).toFixed(2);
-    }
-    recalcPV();
-
-    async function scanDak() {
-        const adres = document.getElementById('adres').value;
-        if(!adres) return alert("Voer een adres in.");
+    function init() {
+        document.getElementById('curDate').innerText = new Date().toLocaleDateString('nl-NL', {day:'numeric', month:'long', year:'numeric'});
         
-        document.getElementById('scan_msg').innerText = "Google Solar data ophalen...";
+        gMap = new google.maps.Map(document.getElementById('map'), {
+            center: {lat: 52.1326, lng: 5.2913},
+            zoom: 7,
+            mapTypeId: 'satellite',
+            tilt: 45,
+            disableDefaultUI: true
+        });
 
+        gAutocomplete = new google.maps.places.Autocomplete(document.getElementById('searchBox'), {
+            types: ['address'],
+            componentRestrictions: {country: 'nl'}
+        });
+
+        gAutocomplete.addListener('place_changed', () => {
+            const place = gAutocomplete.getPlace();
+            if (!place.geometry) return;
+
+            gMap.setCenter(place.geometry.location);
+            gMap.setZoom(20);
+            if (gMarker) gMarker.setMap(null);
+            gMarker = new google.maps.Marker({position: place.geometry.location, map: gMap});
+
+            fetchSolar(place.geometry.location.lat(), place.geometry.location.lng());
+        });
+    }
+
+    async function fetchSolar(lat, lng) {
+        const status = document.getElementById('api-status');
+        status.innerText = "Google Solar analyseert dakvlak...";
+        status.style.color = "#666";
+        
         try {
-            const gRes = await fetch(`https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(adres)}&key=${KEY}`);
-            const gData = await gRes.json();
-            const loc = gData.results[0].geometry.location;
-
-            const sRes = await fetch(`https://solar.googleapis.com/v1/buildingInsights:findClosest?location.latitude=${loc.lat}&location.longitude=${loc.lng}&key=${KEY}`);
-            const sData = await sRes.json();
-
-            if (sData.solarPotential) {
-                const panels = sData.solarPotential.maxArrayPanels;
-                document.getElementById('num_panels').value = panels;
-                recalcPV();
-                document.getElementById('scan_msg').innerText = "Scan succesvol! Aantal panelen bijgewerkt.";
+            const r = await fetch(`https://solar.googleapis.com/v1/buildingInsights:findClosest?location.latitude=${lat}&location.longitude=${lng}&key=${API_KEY}`);
+            const d = await r.json();
+            if (d.solarPotential) {
+                const panels = d.solarPotential.maxArrayPanels;
+                document.getElementById('p_count').value = panels;
+                upd();
+                status.innerText = "✔ Satellietdata succesvol geladen.";
+                status.style.color = "green";
             } else {
-                throw new Error();
+                status.innerText = "Info: Geen Solar data voor dit pand, vul handmatig in.";
+                status.style.color = "#ef4444";
             }
-        } catch (e) {
-            document.getElementById('scan_msg').innerText = "Geen solar data beschikbaar. Vul de panelen handmatig in.";
+        } catch(e) {
+            status.innerText = "Let op: Check Billing/API status in Google Cloud.";
+            status.style.color = "#ef4444";
         }
     }
 
-    function generateAdvice() {
-        const usage = parseFloat(document.getElementById('usage').value);
-        const kwp = parseFloat(document.getElementById('total_kwp').value);
-        const profile = parseFloat(document.getElementById('profile').value);
-        const grid = document.getElementById('grid_phase').value;
-        const ev = document.getElementById('ev').checked;
-        const wp = document.getElementById('wp').checked;
-
-        // Formule: Nachtlast + Buffer
-        let factor = profile + (ev ? 0.15 : 0) + (wp ? 0.20 : 0);
-        let batCap = (usage / 365) * factor;
-
-        // Beperking op basis van PV-opwek
-        batCap = Math.min(batCap, kwp * 1.5);
-
-        // Afronden op ChargePoint modules (2.5 kWh)
-        batCap = Math.max(2.5, Math.round(batCap / 2.5) * 2.5);
-
-        // Fase waarschuwing
-        document.getElementById('phase_warn').style.display = (grid === "1" && batCap > 5.0) ? 'block' : 'none';
-
-        // Resultaten tonen
-        document.getElementById('result-box').style.display = 'block';
-        document.getElementById('out_bat').innerText = batCap.toFixed(1) + " kWh";
-        document.getElementById('out_cover').innerText = Math.round((batCap / (usage / 365)) * 100) + "%";
-        
-        document.getElementById('out_advies').innerText = `Voor een woning met ${kwp} kWp aan PV-vermogen en een jaarverbruik van ${usage} kWh, adviseren wij een modulair systeem van ${batCap.toFixed(1)} kWh. Dit optimaliseert uw eigenverbruik tot een geschatte dekkingsgraad van ${Math.round((batCap / (usage / 365)) * 100)}% van uw dagelijkse behoefte.`;
-        
-        window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+    function upd() {
+        const c = document.getElementById('p_count').value;
+        const w = document.getElementById('p_wp').value;
+        document.getElementById('p_total').value = ((c * w) / 1000).toFixed(2) + " kWp";
     }
+    upd();
+
+    function run() {
+        const usage = parseFloat(document.getElementById('u_annual').value);
+        const kwp = parseFloat(document.getElementById('p_total').value);
+        const wpExtra = parseFloat(document.getElementById('u_wp').value);
+        const phase = document.getElementById('u_phase').value;
+
+        // Basisformule: Nachtlast (ca 70% van daggemiddelde) + buffer voor grote verbruikers
+        let bat = (usage / 365) * 0.75 + wpExtra;
+        
+        // Batterij moet geladen kunnen worden door PV
+        bat = Math.min(bat, kwp * 1.7); 
+        
+        // Afronden op ChargePoint modules (2.5 kWh)
+        let final = Math.max(2.5, Math.round(bat / 2.5) * 2.5);
+        
+        // 1-fase limiet
+        if(phase === "1" && final > 5) final = 5.0;
+
+        document.getElementById('results').style.display = 'block';
+        document.getElementById('r_bat').innerText = final.toFixed(1) + " kWh";
+        
+        // Autarkie schatting
+        const autarkie = Math.min(85, Math.round((final / (usage/365)) * 105));
+        document.getElementById('r_aut').innerText = autarkie + "%";
+        
+        document.getElementById('r_text').innerText = `Op basis van het geanalyseerde dakpotentieel en uw verbruiksprofiel adviseren wij een ChargePoint opslagsysteem van ${final.toFixed(1)} kWh. Hiermee bereikt u een geschatte onafhankelijkheid van ${autarkie}% en optimaliseert u uw investering voor de lange termijn.`;
+        
+        window.scrollTo({top: document.body.scrollHeight, behavior: 'smooth'});
+    }
+
+    window.onload = init;
 </script>
 
 </body>
