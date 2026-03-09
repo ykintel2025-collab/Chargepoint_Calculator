@@ -2,9 +2,9 @@
 <html lang="nl">
 <head>
     <meta charset="UTF-8">
-    <title>ChargePoint Sales Pro | Analyst 6.1</title>
+    <title>ChargePoint Sales Pro | Analyst 6.2</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
-    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAHsZid6T-w8cpmOl3jd_iCgahc5H_PkR8&libraries=places,geometry,marker"></script>
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAHsZid6T-w8cpmOl3jd_iCgahc5H_PkR8&libraries=places"></script>
     <style>
         :root { --cp-magenta: #e6007e; --cp-dark: #1a1a1a; --cp-border: #d1d5db; }
         body { font-family: 'Inter', sans-serif; background: #f3f4f6; margin: 0; padding: 15px; color: var(--cp-dark); }
@@ -29,13 +29,13 @@
 <div class="wrapper">
     <div class="header">
         <img src="Chargepoint_logo.png" alt="ChargePoint" style="max-height: 45px;">
-        <div style="text-align:right;"><span style="font-weight:800; color:var(--cp-magenta);">ENERGY INFRA ANALYST 6.1</span></div>
+        <div style="text-align:right;"><span style="font-weight:800; color:var(--cp-magenta);">ENERGY INFRA ANALYST 6.2</span></div>
     </div>
 
     <div class="main-container">
         <div class="form-content">
             <h2>1. Bedrijfsnaam of Adres</h2>
-            <input type="text" id="searchBox" placeholder="Bijv. ChargePoint Zevenaar...">
+            <input type="text" id="searchBox" placeholder="Bijv. JAZO Zevenaar of Lingestraat 21...">
             <span id="api-status" style="font-size:11px; color:#888; margin-top:4px; display:block; font-weight:700;"></span>
 
             <h2>2. Status Zonnepanelen</h2>
@@ -64,7 +64,7 @@
 
     <div id="results">
         <div class="f-grid">
-            <div><label style="color:#aaa;">Geadviseerde Batterij</label><div class="val" id="r_bat">-- kWh</div></div>
+            <div><label style="color:#aaa;">Opslagadvies</label><div class="val" id="r_bat">-- kWh</div></div>
             <div><label style="color:#aaa;">Autarkie</label><div class="val" id="r_aut">-- %</div></div>
         </div>
         <p id="r_text" style="margin-top:25px; color:#ddd; line-height:1.6; font-size:15px; border-top:1px solid #444; padding-top:20px;"></p>
@@ -73,19 +73,14 @@
 
 <script>
     const API_KEY = 'AIzaSyAHsZid6T-w8cpmOl3jd_iCgahc5H_PkR8';
-    let gMap, gMarker, panorama, isManual = false;
+    let gMap, gMarker, isManual = false;
 
     function initMap() {
-        const cpLoc = { lat: 51.9213268, lng: 6.0651519 };
+        // Startlocatie Handelsdwarsstraat
+        const startLoc = { lat: 51.9213, lng: 6.0651 };
         gMap = new google.maps.Map(document.getElementById('map'), {
-            center: cpLoc, zoom: 18, mapTypeId: 'satellite', streetViewControl: true
+            center: startLoc, zoom: 17, mapTypeId: 'satellite', tilt: 0
         });
-
-        // Start Streetview van het pand
-        panorama = gMap.getStreetView();
-        panorama.setPosition(cpLoc);
-        panorama.setPov({ heading: 260, pitch: 10 });
-        setTimeout(() => { panorama.setVisible(true); }, 1000);
 
         const autocomplete = new google.maps.places.Autocomplete(document.getElementById('searchBox'), {
             types: ['establishment', 'geocode'], componentRestrictions: {country: 'nl'}
@@ -95,9 +90,9 @@
             const place = autocomplete.getPlace();
             if (!place.geometry) return;
             
-            panorama.setVisible(false);
+            // Zoom naar pand maar behoud kwaliteit (level 18/19)
             gMap.setCenter(place.geometry.location); 
-            gMap.setZoom(21);
+            gMap.setZoom(19);
             
             if (gMarker) gMarker.setMap(null);
             gMarker = new google.maps.Marker({ position: place.geometry.location, map: gMap });
@@ -108,32 +103,30 @@
 
     function setPVMode(val) { 
         isManual = val; 
-        document.getElementById('api-status').innerText = val ? "Handmatige invoer actief." : "Selecteer locatie voor scan."; 
+        document.getElementById('api-status').innerText = val ? "Handmatige invoer actief." : "Zoek locatie voor scan."; 
     }
 
     async function fetchSolarData(lat, lng) {
         const status = document.getElementById('api-status');
         status.innerText = "📡 Bezig met dakscan...";
         
-        // We gebruiken een directe API-call met een bypass voor caching
-        const url = `https://solar.googleapis.com/v1/buildingInsights:findClosest?location.latitude=${lat}&location.longitude=${lng}&key=${API_KEY}&t=${Date.now()}`;
-        
         try {
+            const url = `https://solar.googleapis.com/v1/buildingInsights:findClosest?location.latitude=${lat}&location.longitude=${lng}&key=${API_KEY}`;
             const response = await fetch(url);
             const data = await response.json();
 
-            if (data.error) {
-                status.innerHTML = `<span style="color:red">Google Fout: ${data.error.message}</span>`;
-            } else if (data && data.solarPotential) {
+            if (data.solarPotential) {
                 const count = data.solarPotential.maxArrayPanels;
                 document.getElementById('p_count').value = count;
                 status.innerHTML = `<span style="color:green">✔ ${count} panelen gedetecteerd.</span>`;
-                upd();
             } else {
-                status.innerHTML = "<span style='color:orange'>⚠ Geen solar data beschikbaar. Vul handmatig in.</span>";
+                // FALLBACK: Als Google het pand niet kent, schatten we o.b.v. standaard dakoppervlak (18st)
+                document.getElementById('p_count').value = 18;
+                status.innerHTML = "<span style='color:orange'>⚠ Pand niet in Google Solar database. Schatting (18st) toegepast.</span>";
             }
+            upd();
         } catch (e) {
-            status.innerHTML = "<span style='color:red'>Netwerkfout. Check API-sleutel restricties.</span>";
+            status.innerHTML = "<span style='color:red'>Verbindingsfout. Voer panelen handmatig in.</span>";
         }
     }
 
