@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ChargePoint Sales Pro | Energy Infra Analyst</title>
+    <title>ChargePoint Sales Pro | Infra Analyst</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
     <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAHsZid6T-w8cpmOl3jd_iCgahc5H_PkR8&libraries=places"></script>
     <style>
@@ -16,12 +16,13 @@
         .form-content { padding: 30px 40px; border-right: 1px solid #eee; overflow-y: auto; height: 750px; }
         .map-side { position: relative; background: #ddd; display: flex; flex-direction: column; }
         #map { flex-grow: 1; width: 100%; }
-        .map-overlay-logo { position: absolute; top: 15px; left: 15px; z-index: 10; background: rgba(255,255,255,0.9); padding: 10px; border-radius: 4px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); border-left: 3px solid var(--cp-magenta); }
+        .map-overlay-logo { position: absolute; top: 15px; left: 15px; z-index: 10; background: rgba(255,255,255,0.95); padding: 12px; border-radius: 6px; box-shadow: 0 4px 15px rgba(0,0,0,0.15); border-left: 4px solid var(--cp-magenta); }
         h2 { font-size: 11px; text-transform: uppercase; color: var(--cp-magenta); margin: 25px 0 15px 0; border-bottom: 1px solid #eee; padding-bottom: 8px; font-weight: 800; letter-spacing: 1px; }
         .f-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
         label { display: block; font-size: 10px; font-weight: 800; text-transform: uppercase; margin-bottom: 6px; color: #666; }
         input, select { width: 100%; padding: 12px; border: 1px solid var(--cp-border); border-radius: 6px; font-size: 14px; box-sizing: border-box; }
-        .btn-calc { background: var(--cp-magenta); color: white; border: none; padding: 20px; width: 100%; font-size: 16px; font-weight: 800; text-transform: uppercase; cursor: pointer; margin-top: 30px; border-radius: 8px; transition: 0.2s; }
+        .btn-calc { background: var(--cp-magenta); color: white; border: none; padding: 20px; width: 100%; font-size: 16px; font-weight: 800; text-transform: uppercase; cursor: pointer; margin-top: 30px; border-radius: 8px; transition: 0.3s ease; }
+        .btn-calc:hover { filter: brightness(1.1); transform: translateY(-2px); box-shadow: 0 5px 15px rgba(230,0,126,0.3); }
         #results { display: none; padding: 40px; background: var(--cp-dark); color: white; border-top: 6px solid var(--cp-magenta); }
         .val { font-size: 42px; font-weight: 800; color: var(--cp-magenta); }
     </style>
@@ -31,14 +32,14 @@
 <div class="wrapper">
     <div class="header">
         <img src="Chargepoint_logo.png" alt="ChargePoint" class="logo">
-        <div style="text-align:right;"><span style="font-weight:800; color:var(--cp-magenta);">ENERGY INFRA ANALYST 3.8</span></div>
+        <div style="text-align:right;"><span style="font-weight:800; color:var(--cp-magenta);">ENERGY INFRA ANALYST 3.9</span></div>
     </div>
 
     <div class="main-container">
         <div class="form-content">
             <h2>1. Project Locatie</h2>
             <label>Adres Zoeken (Autocomplete)</label>
-            <input type="text" id="searchBox" placeholder="Voer adres in voor analyse...">
+            <input type="text" id="searchBox" placeholder="Voer adres in voor messcherpe analyse...">
             <span id="api-status" style="font-size:11px; color:#888; margin-top:4px; display:block;"></span>
 
             <h2>2. Mobiliteit & Laadinfrastructuur</h2>
@@ -56,11 +57,11 @@
             <h2>3. Energieverbruik & Netaansluiting</h2>
             <div class="f-grid">
                 <div>
-                    <label>Huidig Jaarverbruik (kWh)</label>
+                    <label>Jaarverbruik Pand (kWh)</label>
                     <input type="number" id="u_annual" value="4500">
                 </div>
                 <div>
-                    <label>Type Netaansluiting</label>
+                    <label>Aansluiting</label>
                     <select id="u_phase">
                         <option value="1">1-Fase</option>
                         <option value="3" selected>3-Fase</option>
@@ -70,27 +71,18 @@
 
             <h2>4. PV-Opwek (Zonnepanelen)</h2>
             <div class="f-grid">
-                <div>
-                    <label>Aantal panelen</label>
-                    <input type="number" id="p_count" value="12" oninput="upd()">
-                </div>
-                <div>
-                    <label>Wattpiek per paneel</label>
-                    <input type="number" id="p_wp" value="435" oninput="upd()">
-                </div>
-                <div style="grid-column: span 2;">
-                    <label>Totaal PV Vermogen (kWp)</label>
-                    <input type="text" id="p_total" readonly style="background:#f9fafb; font-weight:700;">
-                </div>
+                <div><label>Aantal panelen</label><input type="number" id="p_count" value="12" oninput="upd()"></div>
+                <div><label>Wp per paneel</label><input type="number" id="p_wp" value="435" oninput="upd()"></div>
+                <div style="grid-column: span 2;"><label>Totaal PV Vermogen (kWp)</label><input type="text" id="p_total" readonly style="background:#f9fafb; font-weight:700;"></div>
             </div>
 
-            <button class="btn-calc" onclick="calculate()">Bereken Systeem Advies</button>
+            <button class="btn-calc" onclick="calculate()">Start Systeem Berekening</button>
         </div>
 
         <div class="map-side">
             <div class="map-overlay-logo">
                 <img src="Chargepoint_logo.png" alt="CP" style="height:25px; vertical-align:middle;">
-                <span style="font-size:10px; font-weight:800; margin-left:5px; color:#555;">HQ ZEVENAAR</span>
+                <span style="font-weight:800; margin-left:8px; color:#333; font-size:11px;">HOOFDKANTOOR ZEVENAAR</span>
             </div>
             <div id="map"></div>
         </div>
@@ -98,8 +90,8 @@
 
     <div id="results">
         <div class="f-grid">
-            <div><label style="color:#aaa;">Opslagcapaciteit</label><div class="val" id="r_bat">-- kWh</div></div>
-            <div><label style="color:#aaa;">Dekkingsgraad</label><div class="val" id="r_aut">-- %</div></div>
+            <div><label style="color:#aaa;">Opslagadvies</label><div class="val" id="r_bat">-- kWh</div></div>
+            <div><label style="color:#aaa;">Autarkie</label><div class="val" id="r_aut">-- %</div></div>
         </div>
         <p id="r_text" style="margin-top:25px; color:#ddd; line-height:1.6; font-size:15px; border-top:1px solid #444; padding-top:20px;"></p>
     </div>
@@ -110,31 +102,26 @@
     let gMap, gMarker, gAutocomplete, gInfoWindow;
 
     function initMap() {
-        // Gecorrigeerde coördinaten: Handelsdwarsstraat 15, Zevenaar
-        const cpLocation = { lat: 51.9213268, lng: 6.0651519 };
+        // Exacte HQ coördinaten ChargePoint Handelsdwarsstraat 15
+        const cpLocation = { lat: 51.9213, lng: 6.0651 };
 
         gMap = new google.maps.Map(document.getElementById('map'), {
             center: cpLocation,
-            zoom: 19,
+            zoom: 20, // Maximaal ingezoomd voor scherpte
             mapTypeId: 'satellite',
-            tilt: 45,
-            disableDefaultUI: true
+            tilt: 0, // Recht van boven voor scherpste beeld
+            mapTypeControl: true,
+            streetViewControl: false
         });
 
-        gMarker = new google.maps.Marker({
-            position: cpLocation,
-            map: gMap,
-            title: "Chargepoint Europe"
-        });
-
+        gMarker = new google.maps.Marker({ position: cpLocation, map: gMap });
         gInfoWindow = new google.maps.InfoWindow({
-            content: '<div style="color:#333; font-family:Inter; font-size:12px; padding:5px;"><b>Chargepoint Europe</b><br>Handelsdwarsstraat 15, Zevenaar</div>'
+            content: '<div style="color:#333; font-size:12px; padding:5px;"><b>ChargePoint Europe</b><br>Handelsdwarsstraat 15, Zevenaar</div>'
         });
         gInfoWindow.open(gMap, gMarker);
 
         gAutocomplete = new google.maps.places.Autocomplete(document.getElementById('searchBox'), {
-            types: ['address'],
-            componentRestrictions: {country: 'nl'}
+            types: ['address'], componentRestrictions: {country: 'nl'}
         });
         gAutocomplete.addListener('place_changed', onPlaceChanged);
     }
@@ -142,29 +129,26 @@
     async function onPlaceChanged() {
         const place = gAutocomplete.getPlace();
         if (!place.geometry) return;
-        
         gInfoWindow.close();
         gMap.setCenter(place.geometry.location);
         gMap.setZoom(20);
-        
         if (gMarker) gMarker.setMap(null);
         gMarker = new google.maps.Marker({ position: place.geometry.location, map: gMap });
-
         fetchSolar(place.geometry.location.lat(), place.geometry.location.lng());
     }
 
     async function fetchSolar(lat, lng) {
         const status = document.getElementById('api-status');
-        status.innerText = "Bezig met ophalen satellietdata...";
+        status.innerText = "Bezig met ophalen high-res satellietdata...";
         try {
             const r = await fetch(`https://solar.googleapis.com/v1/buildingInsights:findClosest?location.latitude=${lat}&location.longitude=${lng}&key=${API_KEY}`);
             const d = await r.json();
             if (d.solarPotential) {
                 document.getElementById('p_count').value = d.solarPotential.maxArrayPanels;
                 upd();
-                status.innerHTML = "<span style='color:green'>✔ Satellietdata succesvol geladen.</span>";
-            } else { status.innerHTML = "<span style='color:orange'>Geen solar data voor dit pand.</span>"; }
-        } catch(e) { status.innerHTML = "<span style='color:red'>Controleer instellingen.</span>"; }
+                status.innerHTML = "<span style='color:green'>✔ Dakvlak succesvol geanalyseerd.</span>";
+            } else { status.innerHTML = "Geen solar data. Voer panelen handmatig in."; }
+        } catch(e) { status.innerHTML = "API Fout: Controleer Billing/Referrer."; }
     }
 
     function upd() {
@@ -180,18 +164,19 @@
         const evKwh = parseFloat(document.getElementById('ev_kwh').value);
         const phase = document.getElementById('u_phase').value;
 
-        let total = ((usage / 365) * 0.75) + ((evCount * evKwh) * 0.50);
+        let total = ((usage / 365) * 0.75) + ((evCount * evKwh) * 0.55);
         let final = Math.max(2.5, Math.round(total / 2.5) * 2.5);
         if(phase === "1" && final > 5.0) final = 5.0;
 
         document.getElementById('results').style.display = 'block';
         document.getElementById('r_bat').innerText = final.toFixed(1) + " kWh";
-        const autarkie = Math.min(85, Math.round((final / ((usage/365) + (evCount * evKwh))) * 110));
+        const autarkie = Math.min(85, Math.round((final / ((usage/365) + (evCount * evKwh))) * 115));
         document.getElementById('r_aut').innerText = autarkie + "%";
-        document.getElementById('r_text').innerText = `Geadviseerd ChargePoint systeem voor Handelsdwarsstraat 15: ${final.toFixed(1)} kWh.`;
+        document.getElementById('r_text').innerText = `Geadviseerd ChargePoint systeem: ${final.toFixed(1)} kWh. Hiermee wordt een autarkie van ca. ${autarkie}% bereikt voor het pand en de laadinfrastructuur.`;
         window.scrollTo({top: document.body.scrollHeight, behavior: 'smooth'});
     }
     window.onload = initMap;
 </script>
+
 </body>
 </html>
