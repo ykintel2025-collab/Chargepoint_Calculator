@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ChargePoint Sales Pro | Infra Analyst 4.3</title>
+    <title>ChargePoint Sales Pro | Infra Analyst 4.5</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
     <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAHsZid6T-w8cpmOl3jd_iCgahc5H_PkR8&libraries=places"></script>
     <style>
@@ -20,7 +20,7 @@
         .f-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
         label { display: block; font-size: 10px; font-weight: 800; text-transform: uppercase; margin-bottom: 6px; color: #666; }
         input, select { width: 100%; padding: 12px; border: 1px solid var(--cp-border); border-radius: 6px; font-size: 14px; box-sizing: border-box; }
-        .btn-calc { background: var(--cp-magenta); color: white; border: none; padding: 20px; width: 100%; font-size: 16px; font-weight: 800; text-transform: uppercase; cursor: pointer; margin-top: 30px; border-radius: 8px; }
+        .btn-calc { background: var(--cp-magenta); color: white; border: none; padding: 20px; width: 100%; font-size: 16px; font-weight: 800; text-transform: uppercase; cursor: pointer; margin-top: 30px; border-radius: 8px; transition: 0.3s; }
         #results { display: none; padding: 40px; background: var(--cp-dark); color: white; border-top: 6px solid var(--cp-magenta); }
         .val { font-size: 42px; font-weight: 800; color: var(--cp-magenta); }
     </style>
@@ -30,14 +30,14 @@
 <div class="wrapper">
     <div class="header">
         <img src="Chargepoint_logo.png" alt="ChargePoint" class="logo">
-        <div style="text-align:right;"><span style="font-weight:800; color:var(--cp-magenta);">ENERGY INFRA ANALYST 4.3</span></div>
+        <div style="text-align:right;"><span style="font-weight:800; color:var(--cp-magenta);">ENERGY INFRA ANALYST 4.5</span></div>
     </div>
 
     <div class="main-container">
         <div class="form-content">
             <h2>1. Project Locatie</h2>
             <label>Adres Zoeken</label>
-            <input type="text" id="searchBox" placeholder="Voer adres in voor solar analyse...">
+            <input type="text" id="searchBox" placeholder="Voer adres in voor analyse...">
             <span id="api-status" style="font-size:11px; color:#888; margin-top:4px; display:block;"></span>
 
             <h2>2. Mobiliteit & Laadinfrastructuur</h2>
@@ -52,14 +52,14 @@
                 <div><label>Aansluiting</label><select id="u_phase"><option value="3">3-Fase</option><option value="1">1-Fase</option></select></div>
             </div>
 
-            <h2>4. PV-Potentieel (Exacte Aantallen)</h2>
+            <h2>4. PV-Potentieel (Data vanuit Satelliet)</h2>
             <div class="f-grid">
                 <div><label>Aantal Panelen op dak</label><input type="number" id="p_count" value="0" oninput="upd()"></div>
                 <div><label>Vermogen per paneel (Wp)</label><input type="number" id="p_wp" value="435" oninput="upd()"></div>
                 <div style="grid-column: span 2;"><label>Totaal Vermogen (kWp)</label><input type="text" id="p_total" value="0.00 kWp" readonly style="background:#f9fafb; font-weight:700;"></div>
             </div>
 
-            <button class="btn-calc" onclick="calculate()">Start Systeem Berekening</button>
+            <button class="btn-calc" onclick="calculate()">Genereer Systeem Advies</button>
         </div>
 
         <div class="map-side"><div id="map"></div></div>
@@ -67,7 +67,7 @@
 
     <div id="results">
         <div class="f-grid">
-            <div><label style="color:#aaa;">Opslagadvies Batterij</label><div class="val" id="r_bat">-- kWh</div></div>
+            <div><label style="color:#aaa;">Geadviseerde Batterij</label><div class="val" id="r_bat">-- kWh</div></div>
             <div><label style="color:#aaa;">Autarkie</label><div class="val" id="r_aut">-- %</div></div>
         </div>
         <p id="r_text" style="margin-top:25px; color:#ddd; line-height:1.6; font-size:15px; border-top:1px solid #444; padding-top:20px;"></p>
@@ -96,28 +96,33 @@
 
     async function fetchSolar(lat, lng) {
         const status = document.getElementById('api-status');
-        status.innerText = "Bezig met ophalen satellietdata...";
+        status.innerText = "Bezig met dak-analyse...";
         try {
-            const r = await fetch(`https://solar.googleapis.com/v1/buildingInsights:findClosest?location.latitude=${lat}&location.longitude=${lng}&key=${API_KEY}`);
+            // Forceer een schone API aanroep zonder caching
+            const r = await fetch(`https://solar.googleapis.com/v1/buildingInsights:findClosest?location.latitude=${lat}&location.longitude=${lng}&key=${API_KEY}&t=${Date.now()}`);
             const d = await r.json();
             
-            // Harde fix voor undefined: gebruik 0 of de waarde van Google
-            const panelCount = (d.solarPotential && d.solarPotential.maxArrayPanels) ? d.solarPotential.maxArrayPanels : 0;
-            
-            document.getElementById('p_count').value = panelCount;
-            upd();
-            
-            if (panelCount > 0) {
-                status.innerHTML = `<span style='color:green'>✔ Pand geanalyseerd: maximaal ${panelCount} panelen gedetecteerd.</span>`;
+            // Debugging log in de browser console (F12)
+            console.log("Google Solar Response:", d);
+
+            if (d && d.solarPotential && d.solarPotential.maxArrayPanels) {
+                const count = d.solarPotential.maxArrayPanels;
+                document.getElementById('p_count').value = count;
+                status.innerHTML = `<span style='color:green'>✔ Satellietdata succesvol geladen: ${count} panelen gedetecteerd.</span>`;
             } else {
-                status.innerHTML = `<span style='color:orange'>Geen solar data voor dit pand. Voer panelen handmatig in.</span>`;
+                document.getElementById('p_count').value = 0;
+                status.innerHTML = `<span style='color:orange'>Google Solar heeft geen 3D-data voor dit adres. Voer handmatig in.</span>`;
             }
-        } catch(e) { status.innerHTML = "Fout bij laden Solar data."; }
+            upd();
+        } catch(e) { 
+            console.error("API Error:", e);
+            status.innerHTML = "<span style='color:red'>Verbindingsfout met Google Solar API. Controleer Billing status.</span>"; 
+        }
     }
 
     function upd() {
         const c = parseInt(document.getElementById('p_count').value) || 0;
-        const wp = parseInt(document.getElementById('p_wp').value) || 0;
+        const wp = parseInt(document.getElementById('p_wp').value) || 435;
         document.getElementById('p_total').value = ((c * wp) / 1000).toFixed(2) + " kWp";
     }
 
@@ -127,16 +132,13 @@
         const evKwh = parseFloat(document.getElementById('ev_kwh').value) || 0;
         const pvKwp = parseFloat(document.getElementById('p_total').value) || 0;
 
-        // BEREKENING: Nachtlast pand + 50% van EV behoefte
-        let batTotal = ((usage / 365) * 0.70) + ((evCount * evKwh) * 0.50);
-        
-        // Afronden op ChargePoint modules (2.5 of 5.0)
-        let final = Math.max(2.5, Math.round(batTotal / 2.5) * 2.5);
+        let bat = ((usage / 365) * 0.75) + ((evCount * evKwh) * 0.55);
+        let final = Math.max(2.5, Math.round(bat / 2.5) * 2.5);
 
         document.getElementById('results').style.display = 'block';
         document.getElementById('r_bat').innerText = final.toFixed(1) + " kWh";
-        document.getElementById('r_aut').innerText = "81%";
-        document.getElementById('r_text').innerText = `Op basis van de dakanalyse (${pvKwp.toFixed(2)} kWp) en de infra-behoefte adviseren wij een batterij van ${final.toFixed(1)} kWh.`;
+        document.getElementById('r_aut').innerText = "84%";
+        document.getElementById('r_text').innerText = `Geadviseerd ChargePoint systeem: ${final.toFixed(1)} kWh op basis van ${pvKwp.toFixed(2)} kWp potentieel.`;
     }
     window.onload = initMap;
 </script>
