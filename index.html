@@ -20,12 +20,13 @@
         .btn-api { background: var(--cp-dark); color: white; border: none; padding: 13px 20px; border-radius: 4px; cursor: pointer; font-weight: 600; font-size: 13px; white-space: nowrap; transition: 0.2s; }
         .btn-api:hover { background: #000; }
         .btn-main { background: var(--cp-magenta); color: white; border: none; padding: 20px; width: 100%; font-size: 16px; font-weight: 700; text-transform: uppercase; cursor: pointer; margin-top: 20px; transition: 0.2s; }
-        .btn-main:hover { opacity: 0.9; }
-        .btn-copy { background: #f0f0f0; color: var(--cp-dark); border: 1px solid var(--cp-border); padding: 10px 20px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 600; margin-top: 20px; display: none; }
-        #solar-results { display: none; margin-top: 20px; padding: 20px; background: #fff4f9; border: 1px solid var(--cp-magenta); border-radius: 4px; }
-        #result-box { display: none; margin-top: 30px; padding: 35px; background: var(--cp-dark); color: white; border-radius: 6px; }
+        .btn-main:hover { opacity: 0.9; transform: translateY(-1px); }
+        #solar-results { display: none; margin-top: 20px; padding: 20px; background: #fff4f9; border: 1px solid var(--cp-magenta); border-radius: 4px; animation: fadeIn 0.4s ease; }
+        #result-box { display: none; margin-top: 30px; padding: 35px; background: var(--cp-dark); color: white; border-radius: 6px; animation: slideUp 0.4s ease; }
         .highlight { color: var(--cp-magenta); font-size: 36px; font-weight: 800; }
         .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body>
@@ -44,12 +45,12 @@
                     <label>Adres voor Satellietscan (Straat, Nr, Woonplaats)</label>
                     <input type="text" id="adres" placeholder="Bijv. Stationsplein 1, Utrecht">
                 </div>
-                <button class="btn-api" id="scanBtn" onclick="scanDak()">Scan Dak via Google</button>
+                <button class="btn-api" onclick="scanDak()">Scan Dak via Google</button>
             </div>
         </div>
 
         <div id="solar-results">
-            <div style="font-weight: 800; color: var(--cp-magenta); margin-bottom: 5px; text-transform: uppercase; font-size: 11px;">Google Solar Analyse:</div>
+            <div style="font-weight: 800; color: var(--cp-magenta); margin-bottom: 5px; text-transform: uppercase; font-size: 12px;">Google Solar Analyse:</div>
             <div id="dak_info" style="line-height: 1.6; font-size: 14px;"></div>
         </div>
 
@@ -82,54 +83,45 @@
                     <div class="highlight" id="out_pv">-- kWp</div>
                 </div>
             </div>
-            <p id="advies_tekst" style="margin-top:25px; font-size:14px; line-height:1.6; color:#ccc; border-top: 1px solid #444; padding-top: 20px;"></p>
-            
-            <button class="btn-copy" id="copyBtn" onclick="copyToClipboard()">📋 Kopieer voor Klant</button>
+            <p id="advies_tekst" style="margin-top:25px; font-size:14px; line-height:1.6; color:#ccc; border-top: 1px solid #444; pt: 20px; padding-top: 20px;"></p>
         </div>
     </div>
 </div>
 
 <script>
-    const GOOGLE_KEY = 'AIzaSyCurnfzpLle-DsRG1Hg4zfaHG07-xPSL4Q'; // Jouw API-key uit de console
+    // Jouw API sleutel direct geplaatst
+    const GOOGLE_KEY = 'AIzaSyCurnfzpLle-DsRG1Hg4zfaHG07-xPSL4Q'; 
     let maxKWp = 0;
-    let numPanels = 0;
 
     async function scanDak() {
         const adres = document.getElementById('adres').value;
         if(!adres) return alert("Voer eerst een adres in.");
         
         const infoDiv = document.getElementById('dak_info');
-        const scanBtn = document.getElementById('scanBtn');
-        
         document.getElementById('solar-results').style.display = 'block';
-        infoDiv.innerText = "Satellietdata analyseren...";
-        scanBtn.disabled = true;
+        infoDiv.innerText = "Satellietdata analyseren voor dit adres...";
 
         try {
-            // Stap 1: Geocoding (Adres naar Coördinaten)
             const gRes = await fetch(`https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(adres)}&key=${GOOGLE_KEY}`);
             const gData = await gRes.json();
             
-            if (gData.status !== "OK") throw new Error("Adres niet gevonden door Google.");
+            if (gData.status !== "OK") throw new Error("Adres niet gevonden.");
             const loc = gData.results[0].geometry.location;
 
-            // Stap 2: Solar API (Coördinaten naar Dakdata)
             const sRes = await fetch(`https://solar.googleapis.com/v1/buildingInsights:findClosest?location.latitude=${loc.lat}&location.longitude=${loc.lng}&key=${GOOGLE_KEY}`);
             const sData = await sRes.json();
 
-            if (!sData.solarPotential) throw new Error("Geen solar data beschikbaar voor dit pand.");
+            if (!sData.solarPotential) throw new Error("Geen solar data voor dit pand.");
 
-            numPanels = sData.solarPotential.maxArrayPanels;
-            maxKWp = numPanels * 0.435; // 435Wp per paneel gemiddeld
+            const panelen = sData.solarPotential.maxArrayPanels;
+            maxKWp = panelen * 0.435;
 
             infoDiv.innerHTML = `
-                Dit dak heeft ruimte voor maximaal <b>${numPanels} panelen</b>.<br>
+                Dit dak heeft ruimte voor maximaal <b>${panelen} panelen</b>.<br>
                 Dit resulteert in een maximaal PV-vermogen van <b>${maxKWp.toFixed(1)} kWp</b>.
             `;
         } catch (e) {
             infoDiv.innerHTML = `<span style="color:red;">Fout: ${e.message}</span>`;
-        } finally {
-            scanBtn.disabled = false;
         }
     }
 
@@ -138,32 +130,24 @@
         const ev = document.getElementById('ev').checked;
         const wp = document.getElementById('wp').checked;
 
-        let factor = 0.65 + (ev ? 0.12 : 0) + (wp ? 0.18 : 0);
+        let factor = 0.65;
+        if (ev) factor += 0.12;
+        if (wp) factor += 0.18;
+        
         let cap = (usage / 365) * factor;
 
-        if(maxKWp > 0) cap = Math.min(cap, maxKWp * 1.6);
+        if(maxKWp > 0) {
+            cap = Math.min(cap, maxKWp * 1.6);
+        }
+
         cap = Math.max(2.5, Math.round(cap / 2.5) * 2.5);
 
         document.getElementById('result-box').style.display = 'block';
-        document.getElementById('copyBtn').style.display = 'block';
         document.getElementById('out_bat').innerText = cap.toFixed(1) + " kWh";
         document.getElementById('out_pv').innerText = maxKWp > 0 ? maxKWp.toFixed(1) + " kWp" : "N.v.t.";
         document.getElementById('advies_tekst').innerText = `Op basis van de dakanalyse en het verbruiksprofiel adviseren wij een modulair ChargePoint opslagsysteem van ${cap.toFixed(1)} kWh.`;
         
         window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
-    }
-
-    function copyToClipboard() {
-        const adres = document.getElementById('adres').value;
-        const bat = document.getElementById('out_bat').innerText;
-        const pv = document.getElementById('out_pv').innerText;
-        const usage = document.getElementById('usage').value;
-        
-        const tekst = `CHARGEPOINT ENERGIE ADVIES\n--------------------------\nLocatie: ${adres}\nJaarverbruik: ${usage} kWh\n\nGoogle Dak-Analyse: ${numPanels} panelen mogelijk (${pv})\nGeadviseerde Batterij: ${bat}\n--------------------------\nGenereer uw offerte op www.chargepointeurope.com`;
-        
-        navigator.clipboard.writeText(tekst).then(() => {
-            alert("Advies gekopieerd naar klembord!");
-        });
     }
 </script>
 
