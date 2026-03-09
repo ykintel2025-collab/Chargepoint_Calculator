@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ChargePoint | Batterij Opslag Calculator</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --cp-orange: #ff7a14;
+            --cp-blue: #0076a8;
+            --cp-dark: #2c3e50;
+            --cp-gray: #555555;
+            --cp-light-bg: #f4f7f9;
+        }
+
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background-color: var(--cp-light-bg); 
+            display: flex; 
+            justify-content: center; 
+            align-items: center;
+            min-height: 100vh;
+            color: var(--cp-dark);
+            margin: 0;
+            padding: 20px;
+        }
+
+        .card { 
+            background: white; 
+            padding: 40px; 
+            border-radius: 12px; 
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1); 
+            max-width: 450px; 
+            width: 100%; 
+            border-top: 8px solid var(--cp-orange);
+        }
+
+        .logo {
+            font-weight: 800;
+            font-size: 26px;
+            color: var(--cp-dark);
+            margin-bottom: 30px;
+            letter-spacing: -1px;
+            text-align: center;
+        }
+        .logo span { color: var(--cp-orange); }
+
+        h2 { 
+            font-size: 20px;
+            margin-bottom: 25px; 
+            text-align: center;
+            font-weight: 700;
+            color: var(--cp-blue);
+        }
+
+        .form-group { margin-bottom: 20px; }
+
+        label { 
+            display: block; 
+            margin-bottom: 8px; 
+            font-weight: 600; 
+            color: var(--cp-gray);
+            font-size: 14px;
+        }
+
+        input[type="number"] { 
+            width: 100%; 
+            padding: 12px 15px; 
+            border: 1px solid #d1d8e0; 
+            border-radius: 6px; 
+            box-sizing: border-box; 
+            font-size: 16px;
+            transition: border-color 0.2s;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: var(--cp-blue);
+            border-width: 2px;
+        }
+
+        .checkbox-container {
+            background: #f9f9f9;
+            border: 1px solid #edf2f7;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 5px;
+        }
+
+        .checkbox-group { 
+            display: flex; 
+            align-items: center; 
+            gap: 12px; 
+            margin-bottom: 12px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .checkbox-group input {
+            width: 18px;
+            height: 18px;
+            accent-color: var(--cp-orange);
+        }
+
+        button { 
+            width: 100%; 
+            background-color: var(--cp-orange); 
+            color: white; 
+            border: none; 
+            padding: 16px; 
+            border-radius: 6px; 
+            font-size: 15px; 
+            font-weight: 700;
+            cursor: pointer; 
+            margin-top: 25px; 
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: background 0.3s, transform 0.1s;
+        }
+
+        button:hover { background-color: #e66b00; }
+
+        #result { 
+            margin-top: 30px; 
+            padding: 25px; 
+            border-radius: 10px; 
+            display: none; 
+            text-align: center;
+            background-color: #fff4ec; 
+            border: 1px solid var(--cp-orange);
+            animation: slideUp 0.4s ease-out;
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .result-value {
+            font-size: 38px;
+            color: var(--cp-orange);
+            font-weight: 800;
+            margin: 10px 0;
+        }
+
+        .result-desc {
+            font-size: 13px;
+            color: var(--cp-gray);
+            line-height: 1.5;
+        }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <div class="logo">Charge<span>Point</span></div>
+    <h2>Batterij Calculator</h2>
+    
+    <div class="form-group">
+        <label for="verbruik">Jaarverbruik (kWh)</label>
+        <input type="number" id="verbruik" value="4000">
+    </div>
+
+    <div class="form-group">
+        <label for="pv">Zonnepanelen (kWp)</label>
+        <input type="number" id="pv" value="5">
+    </div>
+
+    <div class="form-group">
+        <label>Extra opties</label>
+        <div class="checkbox-container">
+            <label class="checkbox-group">
+                <input type="checkbox" id="wp"> <span>Warmtepomp</span>
+            </label>
+            <label class="checkbox-group">
+                <input type="checkbox" id="ev"> <span>Elektrische auto</span>
+            </label>
+        </div>
+    </div>
+
+    <button onclick="bereken()">Bereken Advies</button>
+
+    <div id="result">
+        <div style="font-weight:600; font-size:12px; text-transform:uppercase;">Geadviseerde Opslag</div>
+        <div id="out" class="result-value">-- kWh</div>
+        <p id="desc" class="result-desc"></p>
+    </div>
+</div>
+
+<script>
+    function bereken() {
+        const v = parseFloat(document.getElementById('verbruik').value);
+        const p = parseFloat(document.getElementById('pv').value);
+        const wp = document.getElementById('wp').checked;
+        const ev = document.getElementById('ev').checked;
+
+        if (!v || !p) return;
+
+        let n = 0.65;
+        if (wp) n += 0.15;
+        if (ev) n += 0.10;
+
+        let advies = Math.min((v / 365) * n, p * 1.6);
+        advies = Math.round(advies * 2) / 2;
+
+        document.getElementById('result').style.display = 'block';
+        document.getElementById('out').innerText = advies.toFixed(1) + " kWh";
+        document.getElementById('desc').innerText = "Berekening op basis van " + (n * 100).toFixed(0) + "% nachtdekking.";
+    }
+</script>
+
+</body>
+</html>
